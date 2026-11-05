@@ -9,7 +9,7 @@ export const SYSTEM_REMINDER_DESCRIPTION =
   'Treat these reminders separately from the surrounding user input or tool output.';
 
 export const TOOL_CALL_PREAMBLE_REMINDER =
-  'Be terse. Before executing non-trivial tools, explain intent in at most 1 short sentence.';
+  'No text before tool calls. After finishing, give one short final report.';
 
 export const CODING_STANDARDS_RULES = [
   '- Senior Staff Engineer Standard: Produce clean, type-safe, performant, and production-ready code with robust architecture.',
@@ -25,6 +25,7 @@ export const LANGUAGE_RULES = [
 export const ENVIRONMENT_RULES = [
   'Use the working directory unless the user specifies another path.',
   'Resolve runtime-owned files (config, MCP configuration, agents, skills, memory, logs) from activeDataDir; older paths in context may belong to an inactive profile. This does not override workspace files, external skill paths, or explicit user paths.',
+  'Do NOT run exploratory environment discovery commands (git status, .gitignore, check-ignore, ls .venv, python version checks). Rely on the preflight facts in context; only probe if a build or test command explicitly fails.',
 ].join('\n');
 
 export const FILE_OPERATION_RULES = [

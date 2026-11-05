@@ -787,6 +787,8 @@ export class LocalBashTool implements ToolImpl<
   private lastEnvRemoved: string[] = [];
   /** One-shot hint gate: report stripped names once per tool instance. */
   private envHintShown = false;
+  /** Cache for collapsing repeated identical command runs */
+  private lastBashCommandOutput?: { command: string; output: string; repeatCount: number };
 
   constructor(
     private readonly workspaceRoot: string,
@@ -1099,6 +1101,32 @@ export class LocalBashTool implements ToolImpl<
           },
         };
       }
+    }
+
+    // Ensure non-zero exit codes surface exact error
+    if (exitCode !== 0 && exitCode !== undefined && exitCode !== null) {
+      result.isError = true;
+    }
+
+    // Collapse repeated identical outputs
+    if (
+      this.lastBashCommandOutput &&
+      this.lastBashCommandOutput.command === input.command &&
+      this.lastBashCommandOutput.output === result.text
+    ) {
+      this.lastBashCommandOutput.repeatCount += 1;
+      const collapsedText = `[Identical output repeated ${this.lastBashCommandOutput.repeatCount}x]\n${result.text.trim()}`;
+      result = {
+        ...result,
+        text: collapsedText,
+        content: [{ type: 'text', text: collapsedText }],
+      };
+    } else {
+      this.lastBashCommandOutput = {
+        command: input.command,
+        output: result.text,
+        repeatCount: 1,
+      };
     }
 
     result.details = this.consumeEnvSanitizationHint({

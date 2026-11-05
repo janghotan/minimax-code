@@ -246,6 +246,11 @@ export function newTurn<TCtx extends ToolExecutionContext>(
     onStepEnd: [...(input.hooks?.onStepEndHook ?? []), ...(input.hooks?.onTurnEndHook ?? [])],
   };
 
+  const effectiveThinkingLevel = resolveAdaptiveThinkingLevel(
+    resolved.thinkingLevel,
+    input.history,
+  );
+
   return {
     input,
     llm: resolved,
@@ -261,7 +266,7 @@ export function newTurn<TCtx extends ToolExecutionContext>(
         input,
         llm: resolved,
         tools,
-        thinkingLevel: resolved.thinkingLevel ?? 'off',
+        thinkingLevel: effectiveThinkingLevel,
         hooks: hooks.onLLMPrepared,
         logger: deps.logger,
       }),
@@ -273,7 +278,7 @@ export function newTurn<TCtx extends ToolExecutionContext>(
           auxiliaryStreamFn,
         }
       : {}),
-    thinkingLevel: resolved.thinkingLevel ?? 'off',
+    thinkingLevel: effectiveThinkingLevel,
     initialMessages: [...(input.history ?? [])],
     blockedToolCalls: [],
     syntheticResponse,
@@ -404,4 +409,23 @@ function trustedAssistantMessage(
     stopReason: 'stop',
     timestamp,
   };
+}
+
+function resolveAdaptiveThinkingLevel(
+  resolvedLevel: ThinkingLevel | undefined,
+  history?: readonly AgentMessage[],
+): ThinkingLevel {
+  if (!resolvedLevel || resolvedLevel === 'off') return 'off';
+  if (!history || history.length === 0) return resolvedLevel;
+  const last = history[history.length - 1];
+  if (last && (last.role === 'toolResult' || last.role === 'bashExecution' || (last as any).tool_call_id)) {
+    const isError = Boolean((last as any).isError || (last as any).is_error);
+    if (!isError) {
+      // Simple follow-up step after a tool result with no error: use low
+      return 'low';
+    }
+    // Failure: keep high for debugging/replanning
+    return 'high';
+  }
+  return resolvedLevel;
 }

@@ -48,6 +48,7 @@ import { TuiRuntimeTurnSettlement } from './run/runtime-turn-settlement.js';
 import { createTuiSettledTurn } from './run/turn-settlement.js';
 import { TuiTurnStartLedger } from './run/turn-start-ledger.js';
 import { getGlobalCostTracker } from '../shell/lean-cost-tracker.js';
+import { recordLlmCallUsage } from '@mavis/agent-tools/desktop';
 
 export type { TuiSubmitStatus } from './chat-controller-support.js';
 export type {
@@ -851,6 +852,30 @@ export class TuiChatController {
           isEstimated,
           contextWindow: currentWindow,
         });
+
+        const toolCalls: string[] = [];
+        if (Array.isArray(event.message.content)) {
+          for (const block of event.message.content) {
+            if (block && typeof block === 'object' && (block as any).type === 'toolCall' && (block as any).name) {
+              toolCalls.push(String((block as any).name));
+            }
+          }
+        }
+        const reasoningTokens =
+          (usage as any)?.reasoningTokens ??
+          (event.message.thinking ? Math.round(event.message.thinking.length / 4) : 0);
+
+        recordLlmCallUsage({
+          turn: turnId,
+          tools: toolCalls,
+          inputTokens: promptTokens ?? 0,
+          cacheHit: cacheHitTokens,
+          cacheMiss: cacheMissTokens ?? Math.max(0, (promptTokens ?? 0) - cacheHitTokens),
+          outputTokens: completionTokens ?? 0,
+          reasoningTokens,
+          latencyMs: (event as any).timing?.durationMs ?? 0,
+          contextSize: currentWindow ?? (promptTokens ?? 0),
+        }, this.workspaceDir);
       }
       const outputTokensPerSecond = this.outputRate.apply(turnId, event);
       const outputTokensPerSecondEstimated = this.outputRate.currentEstimated();

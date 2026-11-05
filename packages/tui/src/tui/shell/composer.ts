@@ -150,36 +150,12 @@ function renderComposerHeaderWithTip(
   state: TuiComposerState,
   width: number,
   supportsShiftEnter: boolean,
-  showTips: boolean,
-  nowMs: number,
-  tips: readonly TuiTip[],
+  _showTips: boolean,
+  _nowMs: number,
+  _tips: readonly TuiTip[],
   keybindings: TuiKeybindingRegistry | undefined,
 ): string {
-  const header = renderComposerHeader(state, width, supportsShiftEnter, keybindings);
-  const availableTips = state.contextualTip ? [...tips, state.contextualTip] : tips;
-  if (
-    !showTips ||
-    (state.surface !== 'conversation' && !state.contextualTip) ||
-    state.mode !== 'message' ||
-    state.hint?.trim() ||
-    (state.attachmentCount ?? 0) > 0 ||
-    (state.draftCharacterCount ?? 0) > 0
-  ) {
-    return header;
-  }
-
-  // The suggestion row already explains the empty composer; a tip would compete with it.
-  if (state.promptSuggestion) return header;
-  const tip = selectTuiTipAt(nowMs, availableTips);
-  if (!tip) return header;
-
-  for (const candidate of [tip.text, tip.shortText]) {
-    const text = sanitizeTerminalText(candidate);
-    const gap = width - visibleWidth(header) - visibleWidth(text);
-    if (gap < 4) continue;
-    return `${header}${' '.repeat(gap)}${chalk.hex(colors.muted)(text)}`;
-  }
-  return header;
+  return renderComposerHeader(state, width, supportsShiftEnter, keybindings);
 }
 
 /** A suggestion wider than the editor ends in an ellipsis instead of being cut silently. */
@@ -228,70 +204,29 @@ function composerLabels(
   if (hint) return [sanitizeTerminalText(hint)];
   if (state.mode === 'blocked') {
     return state.attention === 'question'
-      ? ['Reply required · choose an answer', 'Reply required']
-      : ['Reply required · choose an action', 'Reply required'];
+      ? ['Reply required']
+      : ['Reply required'];
   }
-  const submit = formatTuiKeybinding('tui.input.submit', keybindings);
   if (state.mode === 'goal') {
-    if (attachment) {
-      return [`Goal · ${attachment} · ${submit} start`, `Goal · ${submit} start`, 'Goal'];
-    }
-    return [`Goal · ${submit} start · Esc cancel`, `Goal · ${submit} start`, 'Goal'];
+    return attachment ? [`Goal · ${attachment}`, 'Goal'] : ['Goal'];
   }
-  const inputIntent = state.inputIntent;
-  // Run controls (steer, interrupt) live on the activity line; this row only explains the draft.
   if (state.mode === 'follow-up') {
-    const steer = formatTuiKeybinding('run.submit-guidance', keybindings);
-    const queue = formatTuiKeybinding('run.queue-draft', keybindings);
-    if (inputIntent && inputIntent.kind !== 'empty') {
-      return composerInputIntentLabels(inputIntent, attachment, supportsShiftEnter, keybindings, {
-        steer,
-        queue,
-      });
-    }
-    if (attachment) {
-      return [
-        `Message · ${attachment} · ${steer} steer · ${queue} queue`,
-        `Message · ${steer} steer · ${queue} queue`,
-        `${steer} steer · ${queue} queue`,
-        `${queue} queue`,
-        'Message',
-      ];
-    }
-    return [
-      `Message · ${steer} steer · ${queue} queue`,
-      `${steer} steer · ${queue} queue`,
-      `${queue} queue`,
-      'Message',
-    ];
+    return attachment ? [`Message · ${attachment}`, 'Message'] : ['Message'];
   }
   if (state.mode === 'working') {
     return ['Working'];
   }
   const longDraft = (state.draftLineCount ?? 0) > 1 || (state.draftCharacterCount ?? 0) > 1_000;
   if (longDraft) {
-    const edit = formatTuiKeybinding('composer.external-editor', keybindings);
-    return [
-      `Long draft · ${edit} edit · ${submit} send`,
-      `Long draft · ${edit} edit`,
-      'Long draft',
-    ];
-  }
-  if (inputIntent && inputIntent.kind !== 'empty') {
-    return composerInputIntentLabels(inputIntent, attachment, supportsShiftEnter, keybindings);
+    return ['Long draft'];
   }
   if (attachment) {
-    return [`${attachment} · ${submit} send`, attachment, 'Message'];
+    return [attachment, 'Message'];
   }
   if (state.surface === 'welcome') {
-    return ['Start · @ file or Plugin · / autocomplete', 'Start below'];
+    return ['Ready'];
   }
-  if (state.promptSuggestion) {
-    const accept = `${formatTuiKeybinding('tui.input.tab', keybindings)} accept`;
-    return [`Suggested next message · ${accept}`, `Suggestion · ${accept}`, accept];
-  }
-  const newline = composerNewlineKeybinding(supportsShiftEnter, keybindings);
-  return [`Message · ${submit} send · ${newline} newline`, `Message · ${submit} send`, 'Message'];
+  return ['Message'];
 }
 
 function composerNewlineKeybinding(

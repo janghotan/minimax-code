@@ -4,8 +4,16 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { formatGitCompactDiff } from '../../shell/compact-diff.js';
 import { undoLastEdit } from '../../shell/edit-checkpoint.js';
-import { getGlobalCostTracker } from '../../shell/lean-cost-tracker.js';
-import { applyTestBackpressure, detectAndAugmentTestCommand } from '@mavis/agent-tools/desktop';
+import { getGlobalCostTracker, resetPricingTableCache } from '../../shell/lean-cost-tracker.js';
+import {
+  applyTestBackpressure,
+  detectAndAugmentTestCommand,
+  formatUsageCommandOutput,
+  setPricingEntry,
+  registerPricingChangeListener,
+} from '@mavis/agent-tools/desktop';
+
+registerPricingChangeListener(resetPricingTableCache);
 import {
   createTuiCommandCatalog,
   matchTuiCommandInput,
@@ -1375,6 +1383,32 @@ export class TuiCommandFlow {
         const summary = getGlobalCostTracker().formatCostBreakdown();
         this.options.append(summary);
       },
+      usage: async () => {
+        const summary = formatUsageCommandOutput(this.options.workspaceDir);
+        this.options.append(summary);
+      },
+      price: async ({ args }) => {
+        const parts = args.trim().split(/\s+/);
+        if (parts[0] === 'set' && parts.length === 5) {
+          const [, model, hitStr, missStr, outStr] = parts;
+          const hit = parseFloat(hitStr);
+          const miss = parseFloat(missStr);
+          const out = parseFloat(outStr);
+          if (Number.isFinite(hit) && Number.isFinite(miss) && Number.isFinite(out)) {
+            const ok = setPricingEntry(model, hit, miss, out, this.options.workspaceDir);
+            if (ok) {
+              this.options.append(
+                `✓ Pricing updated for ${model}: hit=¥${hit}, miss=¥${miss}, out=¥${out} (per 1M tokens)`,
+              );
+              return;
+            }
+          }
+        }
+        this.options.append(
+          'Usage: /price set <model> <hit_cny> <miss_cny> <out_cny>\nExample: /price set deepseek-chat 0.5 2.0 8.0',
+          'warning',
+        );
+      },
       language: async ({ args }) => {
         const raw = args.trim().toLowerCase();
         let target: 'zh' | 'en';
@@ -1576,7 +1610,6 @@ export class TuiCommandFlow {
         }
       },
       permissions: async () => this.options.featureFlow.showPermissions(),
-      usage: async () => this.options.featureFlow.showSessionUsage(),
       export: async ({ args }) => this.options.featureFlow.exportCurrentTranscript(args),
       transcript: () => this.options.featureFlow.showTranscript(),
       copy: async () => this.options.featureFlow.copyLastAssistantReply(),

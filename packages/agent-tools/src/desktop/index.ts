@@ -1,4 +1,5 @@
 import { toRuntimeTool } from '@mavis/agent-core/tools';
+import { getLeanAgentSettings } from '@mavis/config';
 import type { LocalBashEnvPolicySource } from './permission-execution.js';
 
 import { LocalAskUserTool } from './local-ask-user.js';
@@ -7,6 +8,7 @@ import { LocalBashTool, LocalEditTool, LocalReadTool, LocalWriteTool } from './l
 import type { LocalHostTrashRuntime } from './host-trash-executor.js';
 import { LocalGlobTool } from './local-glob.js';
 import { LocalGrepTool } from './local-grep.js';
+import { LocalGitTool } from './local-git.js';
 import { LocalSkillTool } from './local-skill.js';
 import { LocalMavisTool } from './local-mavis.js';
 import { LocalMemoryTool } from './local-memory.js';
@@ -142,56 +144,61 @@ export function buildLocalToolRegistry(deps: LocalToolRegistryDeps): Map<string,
     ),
     toRuntimeTool(new LocalGrepTool(deps.workspaceRoot)),
     toRuntimeTool(new LocalGlobTool(deps.workspaceRoot)),
-    toRuntimeTool(new LocalTodoWriteTool(deps.todoEventSink)),
+    toRuntimeTool(new LocalGitTool(deps.workspaceRoot)),
   ];
-  if (deps.skillReader) {
-    tools.push(toRuntimeTool(new LocalSkillTool(deps.skillReader)));
-  }
-  if (deps.memoryAdapter) {
-    tools.push(toRuntimeTool(new LocalMemoryTool(deps.memoryAdapter)));
-  }
-  if (deps.codeReviewAdapter) {
-    tools.push(toRuntimeTool(new LocalCodeReviewTool(deps.codeReviewAdapter)));
-  }
-  if (deps.mavisAgentAdapter) {
-    tools.push(
-      toRuntimeTool(
-        new LocalMavisTool(
-          deps.mavisAgentAdapter,
-          deps.mavisCronAdapter,
-          deps.mavisSessionAdapter,
-          deps.mavisMcpAdapter,
+
+  const leanSettings = getLeanAgentSettings();
+  if (!leanSettings.toolSelection.enforceSevenTools) {
+    tools.push(toRuntimeTool(new LocalTodoWriteTool(deps.todoEventSink)));
+    if (deps.skillReader) {
+      tools.push(toRuntimeTool(new LocalSkillTool(deps.skillReader)));
+    }
+    if (deps.memoryAdapter) {
+      tools.push(toRuntimeTool(new LocalMemoryTool(deps.memoryAdapter)));
+    }
+    if (deps.codeReviewAdapter) {
+      tools.push(toRuntimeTool(new LocalCodeReviewTool(deps.codeReviewAdapter)));
+    }
+    if (deps.mavisAgentAdapter) {
+      tools.push(
+        toRuntimeTool(
+          new LocalMavisTool(
+            deps.mavisAgentAdapter,
+            deps.mavisCronAdapter,
+            deps.mavisSessionAdapter,
+            deps.mavisMcpAdapter,
+          ),
         ),
-      ),
-    );
-  }
-  if (deps.askUserAdapter) {
-    tools.push(toRuntimeTool(new LocalAskUserTool(deps.askUserAdapter)));
-    tools.push(toRuntimeTool(new LocalFeatureEnableTool(deps.askUserAdapter)));
-  }
-  if (deps.webFetchAdapter) {
-    tools.push(toRuntimeTool(new LocalWebFetchTool(deps.webFetchAdapter)));
-  }
-  if (deps.webSearchAdapter) {
-    tools.push(toRuntimeTool(new LocalWebSearchTool(deps.webSearchAdapter)));
-  }
-  if (deps.taskAdapter) {
-    tools.push(toRuntimeTool(new LocalTaskTool(deps.taskAdapter)));
-  }
-  if (deps.taskAppendAdapter) {
-    tools.push(toRuntimeTool(new LocalTaskAppendTool(deps.taskAppendAdapter)));
-  }
-  if (deps.taskControlAdapter) {
-    tools.push(
-      toRuntimeTool(new LocalTaskQueryTool(deps.taskControlAdapter)),
-      toRuntimeTool(new LocalTaskOutputTool(deps.taskControlAdapter)),
-      toRuntimeTool(new LocalTaskStopTool(deps.taskControlAdapter)),
-    );
-  }
-  if (deps.websiteDeployAdapter) {
-    tools.push(
-      toRuntimeTool(new LocalWebsiteDeployTool(deps.websiteDeployAdapter, deps.workspaceRoot)),
-    );
+      );
+    }
+    if (deps.askUserAdapter) {
+      tools.push(toRuntimeTool(new LocalAskUserTool(deps.askUserAdapter)));
+      tools.push(toRuntimeTool(new LocalFeatureEnableTool(deps.askUserAdapter)));
+    }
+    if (deps.webFetchAdapter) {
+      tools.push(toRuntimeTool(new LocalWebFetchTool(deps.webFetchAdapter)));
+    }
+    if (deps.webSearchAdapter) {
+      tools.push(toRuntimeTool(new LocalWebSearchTool(deps.webSearchAdapter)));
+    }
+    if (deps.taskAdapter) {
+      tools.push(toRuntimeTool(new LocalTaskTool(deps.taskAdapter)));
+    }
+    if (deps.taskAppendAdapter) {
+      tools.push(toRuntimeTool(new LocalTaskAppendTool(deps.taskAppendAdapter)));
+    }
+    if (deps.taskControlAdapter) {
+      tools.push(
+        toRuntimeTool(new LocalTaskQueryTool(deps.taskControlAdapter)),
+        toRuntimeTool(new LocalTaskOutputTool(deps.taskControlAdapter)),
+        toRuntimeTool(new LocalTaskStopTool(deps.taskControlAdapter)),
+      );
+    }
+    if (deps.websiteDeployAdapter) {
+      tools.push(
+        toRuntimeTool(new LocalWebsiteDeployTool(deps.websiteDeployAdapter, deps.workspaceRoot)),
+      );
+    }
   }
 
   const map = new Map<string, LocalRuntimeTool>();
@@ -224,3 +231,17 @@ export {
   formatCompactUnifiedDiff,
   formatGitCompactDiff,
 } from './compact-diff.js';
+export { LocalGitTool } from './local-git.js';
+export {
+  recordLlmCallUsage,
+  readUsageEntries,
+  formatUsageCommandOutput,
+  setPricingEntry,
+  registerPricingChangeListener,
+  type LlmCallUsageEntry,
+} from './usage-logger.js';
+export {
+  getOrDetectProjectPreflight,
+  formatProjectPreflightLine,
+  type ProjectPreflightInfo,
+} from './project-preflight.js';

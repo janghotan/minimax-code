@@ -1,4 +1,5 @@
 import { getRuntimeRegion } from '@mavis/config';
+import { getOrDetectProjectPreflight, formatProjectPreflightLine } from '@mavis/agent-tools/desktop';
 import type { LocalConversationRuntimeConfig } from '../../../../model-system/index.js';
 import { ENVIRONMENT_RULES } from '../prompt-blocks.js';
 import { resolveRuntimeLocale } from '../static-prompt-reader.js';
@@ -21,6 +22,7 @@ export function environmentContextBlock(scope: {
     '# Environment',
     'You have been invoked in the following environment:',
     `- Primary working directory: ${workspaceDir}`,
+    `- Project preflight: ${formatProjectPreflightLine(getOrDetectProjectPreflight(workspaceDir))}`,
     `- Is a git repository: ${isGitRepository ?? 'unavailable'}`,
     `- Platform: ${environment?.platform ?? process.platform}`,
     `- Shell: ${environment?.shell ?? 'unavailable'}`,

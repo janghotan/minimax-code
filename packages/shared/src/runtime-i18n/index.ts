@@ -17,10 +17,10 @@ function resolveDefaultLanguage(): 'zh' | 'en' {
   if (process.env.NODE_ENV === 'test' && !process.env.MINIMAX_FORCE_ZH) {
     return 'en';
   }
-  return 'zh';
+  return 'en';
 }
 
-/** Get current active global UI language ('zh' | 'en'). Defaults to 'zh'. */
+/** Get current active global UI language ('zh' | 'en'). Defaults to 'en'. */
 export function getGlobalRuntimeLanguage(): 'zh' | 'en' {
   return globalRuntimeLanguageOverride ?? resolveDefaultLanguage();
 }
@@ -39,7 +39,7 @@ export function resetGlobalRuntimeLanguage(): void {
 
 type RuntimeLocale = 'en' | 'zh-Hans';
 
-const DEFAULT_RUNTIME_LOCALE: RuntimeLocale = 'zh-Hans';
+const DEFAULT_RUNTIME_LOCALE: RuntimeLocale = 'en';
 
 const RUNTIME_TRANSLATIONS: Readonly<Record<RuntimeLocale, RuntimeTranslations>> = {
   en: EN_RUNTIME_TRANSLATIONS,

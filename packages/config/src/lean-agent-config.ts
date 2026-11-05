@@ -52,8 +52,16 @@ export interface LeanContextManagementConfig {
   readonly batchMaskThreshold: number;
   /** Compaction safety bound threshold as ratio of context window (default: 0.60) */
   readonly compactionThreshold: number;
+  /** Compaction trigger ratio (default: 0.60) */
+  readonly compactionTriggerAt: number;
   /** Keep the last N turns raw during compaction (default: 2) */
   readonly keepRawTurns: number;
+}
+
+export interface LeanToolSelectionConfig {
+  /** Strictly enforce 7 core tools: bash, read, edit, write, glob, grep, git (default: true) */
+  readonly enforceSevenTools: boolean;
+  readonly allowedTools: readonly string[];
 }
 
 export interface LeanDeclutterConfig {
@@ -96,6 +104,7 @@ export interface LeanAgentSettings {
   readonly search: LeanSearchConfig;
   readonly edit: LeanEditConfig;
   readonly contextManagement: LeanContextManagementConfig;
+  readonly toolSelection: LeanToolSelectionConfig;
   readonly declutter: LeanDeclutterConfig;
   readonly provider: LeanProviderConfig;
   readonly tui: LeanTuiConfig;
@@ -129,7 +138,12 @@ export const DEFAULT_LEAN_AGENT_SETTINGS: Readonly<LeanAgentSettings> = {
     keepRecentToolRounds: 5,
     batchMaskThreshold: 0.40,
     compactionThreshold: 0.60,
+    compactionTriggerAt: 0.60,
     keepRawTurns: 2,
+  },
+  toolSelection: {
+    enforceSevenTools: true,
+    allowedTools: ['bash', 'read', 'read_file', 'edit', 'edit_file', 'write', 'write_file', 'glob', 'grep', 'git'],
   },
   declutter: {
     disableDailyCheckin: true,
@@ -146,7 +160,7 @@ export const DEFAULT_LEAN_AGENT_SETTINGS: Readonly<LeanAgentSettings> = {
     projectName: 'Minimax-coder',
     usdToCnyRate: 7.25,
     diffContextLines: 2,
-    language: 'zh',
+    language: 'en',
     showWelcomeCard: false,
   },
 };
@@ -167,6 +181,10 @@ export function updateLeanAgentSettings(overrides: Partial<LeanAgentSettings>): 
     contextManagement: {
       ...currentLeanSettings.contextManagement,
       ...(overrides.contextManagement ?? {}),
+    },
+    toolSelection: {
+      ...currentLeanSettings.toolSelection,
+      ...(overrides.toolSelection ?? {})
     },
     declutter: {
       ...currentLeanSettings.declutter,

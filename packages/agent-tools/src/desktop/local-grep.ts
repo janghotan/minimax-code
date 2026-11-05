@@ -40,6 +40,7 @@ import { LocalGrepToolDef, type LocalGrepToolInput } from './builtin-defs.js';
 import { resolveGrepTarget, runRg, type RunRgOptions, textResult } from './local-rg-runner.js';
 import { isSensitiveSearchRoot, sensitiveExcludeArgs } from './local-sensitive.js';
 import { withDesktopCompletenessReport } from './ptc-result-projection.js';
+import { spillToolOutput } from './artifact-spill.js';
 import {
   applyDesktopTextLimit,
   createDesktopOutputContinuation,
@@ -419,9 +420,23 @@ export class LocalGrepTool implements ToolImpl<
           (!limited.truncation || lineIndex - shownFrom < limited.returnedBodyLines),
       )
       .map(({ path, line, text: matchText }) => ({ path, line, text: matchText }));
+    const limitedResult = applyDesktopTextLimit(toolResult, limited);
+    const spilled = spillToolOutput(limitedResult.text, this.workspaceRoot, {
+      toolName: 'grep',
+      maxLines: 150,
+      customHint: 'Grep output spilled to artifact. Use more specific pattern or path to narrow results.',
+    });
+    const finalResult = spilled.isSpilled
+      ? {
+          ...limitedResult,
+          text: spilled.text,
+          content: [{ type: 'text' as const, text: spilled.text }],
+        }
+      : limitedResult;
+
     return reportGrep(
       withMatchLimitContinuation(
-        applyDesktopTextLimit(toolResult, limited),
+        finalResult,
         details,
         offset + effectiveLimit,
       ),

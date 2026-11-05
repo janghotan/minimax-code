@@ -2579,7 +2579,9 @@ function parseContextManagementConfig(
   const compactionTriggerAt =
     typeof obj.compactionTriggerAt === "number"
       ? obj.compactionTriggerAt
-      : undefined;
+      : typeof (obj as any).compactionThreshold === "number"
+        ? (obj as any).compactionThreshold
+        : 0.60;
 
   return {
     disableSystemReminderModels,

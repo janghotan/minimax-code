@@ -34,6 +34,7 @@ import {
   emitLocalPluginHookWarnings,
   localPluginHookCoordinator as pluginHookCoordinator,
 } from '../assembly/local-turn-plugin-hooks.js';
+import { createObservationMaskingBeforeLlmHook } from './observation-masking-hook.js';
 import { copyCanonicalHistoryForPiCompatibility } from '../history/canonical-history-validation.js';
 import type { AgentExecutionSnapshot, TurnOutputContract } from '../preparation/contracts.js';
 import type {
@@ -682,6 +683,7 @@ export class LocalRuntimeTurnExecutor<
   ): Promise<readonly PiBeforeLlmCallHook[]> {
     return [
       ...((await this.options.resolveBeforeLlmCallHooks?.(input)) ?? []),
+      createObservationMaskingBeforeLlmHook(),
       ...(input.contextCompactionHook
         ? [withPluginAutomaticCompactionLifecycle(input.contextCompactionHook, input)]
         : []),

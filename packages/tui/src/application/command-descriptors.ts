@@ -38,7 +38,7 @@ export const TUI_COMMAND_DESCRIPTORS = {
   },
   usage: {
     name: 'usage',
-    description: 'Show session usage',
+    description: 'Print top 5 most expensive LLM calls, avg input/call, and cache stats',
   },
   compact: {
     name: 'compact',
@@ -59,6 +59,10 @@ export const TUI_COMMAND_DESCRIPTORS = {
   cost: {
     name: 'cost',
     description: 'Show session token and cost breakdown in CNY',
+  },
+  price: {
+    name: 'price',
+    description: 'Configure model pricing (/price set <model> <hit> <miss> <out>)',
   },
   language: {
     name: 'language',

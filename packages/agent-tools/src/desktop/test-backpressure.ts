@@ -22,10 +22,10 @@ export function detectAndAugmentTestCommand(command: string): TestRunnerDetectio
   const trimmed = command.trim();
 
   // Pytest
-  if (/\bpytest\b/.test(trimmed)) {
+  if (/(?:^|\s|\/|")pytest(?:"|\s|$)/.test(trimmed)) {
     let augmented = command;
     if (settings.injectFailFast && !/\s(-x|--exitfirst|--maxfail)\b/.test(trimmed)) {
-      augmented = command.replace(/\bpytest\b/, 'pytest -x');
+      augmented = command.replace(/(^|\s|\/|")pytest\b/, '$1pytest -x');
     }
     return { isTestOrLint: true, runnerName: 'pytest', augmentedCommand: augmented };
   }

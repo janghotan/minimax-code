@@ -308,6 +308,12 @@ const COMMAND_SOURCES: readonly TuiCommandSource[] = [
     discoverability: 'primary',
   },
   {
+    ...TUI_COMMAND_DESCRIPTORS.price,
+    category: 'Session',
+    argumentHint: 'set <model> <hit> <miss> <out>',
+    discoverability: 'primary',
+  },
+  {
     ...TUI_COMMAND_DESCRIPTORS.language,
     aliases: ['lang', 'locale'],
     category: 'Session',
@@ -488,7 +494,7 @@ const COMMAND_SOURCES: readonly TuiCommandSource[] = [
   {
     ...TUI_COMMAND_DESCRIPTORS.usage,
     category: 'Transcript',
-    discoverability: 'contextual',
+    discoverability: 'primary',
   },
   {
     ...TUI_COMMAND_DESCRIPTORS.export,

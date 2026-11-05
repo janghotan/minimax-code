@@ -381,8 +381,7 @@ export class LeanCostTracker {
     const limitStr = formatTokenK(limit);
 
     const costRes = this.calculateCost(targetModel);
-    const isZh = getRuntimeLocaleLanguage() === 'zh';
-    let costStr = isZh ? '未收录定价' : 'no price';
+    let costStr = '¥?';
     if (costRes.hasPrice && costRes.totalCny !== undefined) {
       costStr = `${estMark}¥${costRes.totalCny.toFixed(3)}`;
     }
@@ -409,7 +408,7 @@ export class LeanCostTracker {
       if (costRes.hasPrice && costRes.totalCny !== undefined) {
         lines.push(`  • 总消耗成本: ¥${costRes.totalCny.toFixed(4)} CNY`);
       } else {
-        lines.push('  • 总消耗成本: 未收录定价 (定价表中未包含该模型)');
+        lines.push(`  • 总消耗成本: ¥? (未收录定价。可通过 /price set ${targetModel} <hit> <miss> <out> 设置)`);
       }
 
       return lines.join('\n');
@@ -427,7 +426,7 @@ export class LeanCostTracker {
     if (costRes.hasPrice && costRes.totalCny !== undefined) {
       lines.push(`  • Total Cost: ¥${costRes.totalCny.toFixed(4)} CNY`);
     } else {
-      lines.push('  • Total Cost: no price (model unlisted in pricing.json)');
+      lines.push(`  • Total Cost: ¥? (unlisted. Set via /price set ${targetModel} <hit> <miss> <out>)`);
     }
 
     return lines.join('\n');

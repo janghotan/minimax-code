@@ -278,11 +278,11 @@ test('cost tracker: unlisted model shows "no price" marker without guessing', ()
   expect(cost.marker).toBe('no price');
 
   const statusLine = tracker.formatPersistentStatusLine(65536, 'unlisted-exotic-model');
-  expect(statusLine).toContain('💰 no price');
+  expect(statusLine).toContain('💰 ¥?');
   expect(statusLine).toContain('🧠');
 
   const breakdown = tracker.formatCostBreakdown('unlisted-exotic-model');
-  expect(breakdown).toContain('Total Cost: no price (model unlisted in pricing.json)');
+  expect(breakdown).toContain('Total Cost: ¥?');
 });
 
 test('cost tracker: custom provider prefixes (e.g. custom_provider:gem/gemini-3-flash) match normalized models', () => {
@@ -441,8 +441,8 @@ test('language switching: /language toggles between Simplified Chinese and Engli
   expect(formatTuiPermissionModeCompact('default')).toBe('询问');
   expect(formatTuiPermissionModeCompact('bypassPermissions')).toBe('完全');
 
-  // Verify composer placeholder in Chinese
-  expect(composerText('placeholder')).toContain('MiniMax');
+  // Verify composer placeholder in Chinese (lean without MiniMax branding)
+  expect(composerText('placeholder')).toContain('随时提问或指派任务');
 
   // Verify cost breakdown in Chinese
   const tracker = new LeanCostTracker();
@@ -473,8 +473,8 @@ test('language switching: /language toggles between Simplified Chinese and Engli
   expect(formatTuiPermissionMode('bypassPermissions')).toBe('Full access');
   expect(formatTuiPermissionModeCompact('default')).toBe('ASK');
 
-  // Verify composer placeholder in English
-  expect(composerText('placeholder')).toBe('Ask Mcode to do anything');
+  // Verify composer placeholder in English (clean without brand)
+  expect(composerText('placeholder')).toBe('Ask anything or assign a task…');
 
   // Verify cost breakdown in English
   const enBreakdown = tracker.formatCostBreakdown('deepseek-chat');

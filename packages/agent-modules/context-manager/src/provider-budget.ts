@@ -1,8 +1,8 @@
 import { DEFAULT_CONTEXT_MANAGER_SETTINGS } from './settings.js';
 
 const PROVIDER_INPUT_RATIO = 0.95;
-/** Integer percent keeps the trigger exact (0.95 is not exact in binary floating point). */
-const AUTOMATIC_TRIGGER_PERCENT = 95;
+/** Integer percent keeps the trigger exact (0.60 is the lean default compaction trigger). */
+const AUTOMATIC_TRIGGER_PERCENT = 60;
 
 export function resolveDynamicMaxTokens(input: {
   readonly contextWindow: number;
