@@ -20,6 +20,7 @@ export interface LlmCallUsageEntry {
   contextSize: number;
   cacheHitPercent: number;
   divergenceOffset?: number;
+  divergenceBlock?: string;
   timestamp: string;
 }
 
@@ -61,6 +62,7 @@ export function recordLlmCallUsage(
     contextSize: entry.contextSize ?? input,
     cacheHitPercent: Math.round(cacheHitPercent * 10) / 10,
     ...(entry.divergenceOffset !== undefined ? { divergenceOffset: entry.divergenceOffset } : {}),
+    ...(entry.divergenceBlock ? { divergenceBlock: entry.divergenceBlock } : {}),
     timestamp: entry.timestamp ?? new Date().toISOString(),
   };
 
@@ -166,7 +168,7 @@ export function formatUsageCommandOutput(workspaceRoot = process.cwd()): string 
     lowCacheCalls.slice(0, 3).forEach((e) => {
       const offsetHint =
         e.divergenceOffset !== undefined
-          ? ` [divergence at byte ~${e.divergenceOffset}]`
+          ? ` [divergence at byte ~${e.divergenceOffset}${e.divergenceBlock ? `: ${e.divergenceBlock}` : ''}]`
           : '';
       lines.push(
         ` • Turn ${e.turn} (${e.cacheHitPercent}% hit): ${e.inputTokens} in, miss: ${e.cacheMiss}${offsetHint}`,

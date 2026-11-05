@@ -547,20 +547,19 @@ export class LocalWriteTool implements ToolImpl<
 
     // Reject overwriting existing files with >60 lines: force edit_file hunks to save tokens
     const candidatePath = resolveLocalCandidatePath(input.path, this.workspaceRoot);
-    if (existsSync(candidatePath)) {
-      try {
+    try {
+      if (existsSync(candidatePath)) {
         const existingRaw = await readFile(candidatePath, 'utf8');
         const existingLines = existingRaw.split('\n').length;
-        const newLines = input.content.split('\n').length;
-        if (existingLines > 60 || newLines > 60) {
+        if (existingLines > 60) {
           return {
             text: `Refactor/write rejected: '${input.path}' is an existing file with >60 lines (${existingLines} lines). To save tokens and avoid token bloat, you MUST use 'edit' (edit_file) with precise hunks instead of overwriting the full file with 'write'.`,
             isError: true,
           };
         }
-      } catch {
-        // Fall back to write
       }
+    } catch {
+      // Allow write on ENOENT or unreadable paths
     }
     // Per-execute capture context. This tool instance is a process-level
     // singleton (buildLocalToolRegistry), so an instance-level pending map

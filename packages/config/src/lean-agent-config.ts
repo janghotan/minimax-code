@@ -50,6 +50,8 @@ export interface LeanContextManagementConfig {
   readonly keepRecentToolRounds: number;
   /** Batch masking trigger threshold as ratio of context window (default: 0.40) */
   readonly batchMaskThreshold: number;
+  /** Minimum number of unmasked candidate rounds to mask in a single batch (default: 3) */
+  readonly batchMaskRounds?: number;
   /** Compaction safety bound threshold as ratio of context window (default: 0.60) */
   readonly compactionThreshold: number;
   /** Compaction trigger ratio (default: 0.60) */
@@ -137,6 +139,7 @@ export const DEFAULT_LEAN_AGENT_SETTINGS: Readonly<LeanAgentSettings> = {
     contextWindowFloor: 64 * 1024,
     keepRecentToolRounds: 5,
     batchMaskThreshold: 0.40,
+    batchMaskRounds: 3,
     compactionThreshold: 0.60,
     compactionTriggerAt: 0.60,
     keepRawTurns: 2,

@@ -52,6 +52,18 @@ export function createObservationMaskingBeforeLlmHook(): PiBeforeLlmCallHook {
         delete copy.thinking;
         replacedNarration = true;
       }
+      if (copy.thinking_content) {
+        delete copy.thinking_content;
+        replacedNarration = true;
+      }
+      if (copy.reasoning_content) {
+        delete copy.reasoning_content;
+        replacedNarration = true;
+      }
+      if (copy.thinkingSignature) {
+        delete copy.thinkingSignature;
+        replacedNarration = true;
+      }
       return copy as unknown as AgentMessage;
     });
 

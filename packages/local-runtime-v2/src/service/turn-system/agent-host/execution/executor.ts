@@ -42,6 +42,8 @@ import {
   getOrDetectProjectPreflight,
   formatProjectPreflightLine,
   recordLlmCallUsage,
+  getSessionPrefixTracker,
+  type DivergenceResult,
 } from '@mavis/agent-tools/desktop';
 import { copyCanonicalHistoryForPiCompatibility } from '../history/canonical-history-validation.js';
 import type { AgentExecutionSnapshot, TurnOutputContract } from '../preparation/contracts.js';
@@ -398,6 +400,8 @@ export class LocalRuntimeTurnExecutor<
               toolPolicyGuard: this.options.toolPolicyGuard,
               finalizeToolResultForHistory: this.options.finalizeToolResultForHistory,
               ptcFactCollector: prepared.ptcFactCollector,
+              systemPrompt: prepared.systemPrompt,
+              tools: prepared.tools,
             }),
             promptSuggestion?.capture,
           ),
@@ -589,7 +593,10 @@ export class LocalRuntimeTurnExecutor<
               schema: leanDef.schema,
             },
           };
-        });
+        })
+        .sort((a: any, b: any) =>
+          (a.def?.name ?? a.name ?? '').localeCompare(b.def?.name ?? b.name ?? ''),
+        );
 
       const workspaceDir = input.session.workspaceDir ?? process.cwd();
       const preflight = getOrDetectProjectPreflight(workspaceDir);
@@ -683,12 +690,14 @@ export class LocalRuntimeTurnExecutor<
       withPtcCompactionReminder(
         createPtcTurnCompactionReminder(input, this.options),
         afterCompactionReminderHooks(
-          createExecutionBudgetReminder(
-            input.request.executionDeadlineAtMs,
-            this.options.nowMs,
-            this.options.canAppendExecutionBudgetReminder,
-            this.options.logger,
-          ),
+          enforceSeven
+            ? undefined
+            : createExecutionBudgetReminder(
+                input.request.executionDeadlineAtMs,
+                this.options.nowMs,
+                this.options.canAppendExecutionBudgetReminder,
+                this.options.logger,
+              ),
           backgroundReminder?.hook,
         ),
       ),
@@ -995,12 +1004,32 @@ function mergeHooks<TAgent extends AgentExecutionSnapshot, TContext extends Tool
     finalizeToolResultForHistory,
     ...(ptcFactCollector ? { ptcFactCollector } : {}),
   });
+
+  let lastDivergenceResult: DivergenceResult | undefined;
+  const prefixTrackerHook: PiBeforeLlmCallHook = (hookInput) => {
+    try {
+      const sessionId = input.lease.sessionId ?? 'default';
+      const tracker = getSessionPrefixTracker(sessionId);
+      const trackerPrompt = options.systemPrompt ?? '';
+      const trackerTools = options.tools ?? [];
+      lastDivergenceResult = tracker.recordStep(
+        trackerPrompt,
+        trackerTools,
+        hookInput.messages,
+      );
+    } catch {
+      // Best-effort prefix tracking
+    }
+    return { type: 'continue' };
+  };
+
   return {
     ...input.assembly.hooks,
     ...toolHooks,
     beforeLlmCallHook: [
       ...(input.assembly.hooks.beforeLlmCallHook ?? []),
       ...hostBeforeLlmCallHooks,
+      prefixTrackerHook,
     ],
     onHistoryChangedHook: [
       async (change) => {
@@ -1055,6 +1084,12 @@ function mergeHooks<TAgent extends AgentExecutionSnapshot, TContext extends Tool
             reasoningTokens,
             latencyMs: 0,
             contextSize: inputTokens + outputTokens,
+            ...(lastDivergenceResult !== undefined
+              ? {
+                  divergenceOffset: lastDivergenceResult.offset,
+                  divergenceBlock: lastDivergenceResult.block,
+                }
+              : {}),
           }, workspaceDir);
         } catch {
           // Usage logging failure must never fail the turn

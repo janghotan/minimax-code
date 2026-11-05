@@ -49,8 +49,8 @@ test('Lean system prompt contains only non-obvious coding rules and no marketing
   expect(prompt).toContain('Be terse');
   expect(prompt).toContain('Never echo file contents');
   expect(prompt).toContain('Senior Staff Engineer');
-  expect(prompt).toContain('Chinese Docstrings & Comments');
-  expect(prompt).toContain('简体中文');
+  expect(prompt).toContain('Numbered Task Checklist');
+  expect(prompt).not.toContain('Chinese Docstrings & Comments');
 
   // Fluff, cheerleading and marketing removed
   expect(prompt).not.toContain('Ok cool');

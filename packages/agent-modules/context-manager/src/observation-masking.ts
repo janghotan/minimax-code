@@ -10,6 +10,7 @@ export interface MaskingResult {
 export interface ObservationMaskingOptions {
   readonly keepRecentRounds?: number;
   readonly batchMaskThreshold?: number;
+  readonly batchMaskRounds?: number;
   readonly contextWindow?: number;
 }
 
@@ -137,6 +138,29 @@ export function maskObservationsBatch(
 
   // Rounds to mask are all except the last keepRecentRounds
   const roundsToMask = rounds.slice(0, rounds.length - keepRecentRounds);
+
+  // Prefix cache protection: Masking must ONLY run in batches!
+  // Do not rewrite history for 1 or 2 rounds on every turn increment.
+  const isRoundAlreadyMasked = (r: DetectedRound): boolean => {
+    if (r.resultIndexes.length === 0) return true;
+    return r.resultIndexes.every((idx) => {
+      const msg = messages[idx];
+      if (!msg) return false;
+      const text = extractMessageText(msg);
+      return text.startsWith('[ran ') && text.endsWith(']');
+    });
+  };
+
+  const unmaskedEligibleRounds = roundsToMask.filter((r) => !isRoundAlreadyMasked(r));
+  const batchMaskRounds = options.batchMaskRounds ?? (settings as any).batchMaskRounds ?? 3;
+  if (unmaskedEligibleRounds.length < batchMaskRounds) {
+    return {
+      masked: false,
+      messages,
+      maskedCount: 0,
+    };
+  }
+
   const resultIndexesToMask = new Set<number>();
   const toolCallByResultIndex = new Map<number, { name: string; args: unknown }>();
 

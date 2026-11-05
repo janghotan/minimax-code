@@ -239,6 +239,8 @@ export interface LocalTurnHookMergeOptions<
   readonly toolPolicyGuard?: LocalTurnToolPolicyGuard;
   readonly finalizeToolResultForHistory?: LocalToolResultHistoryFinalizer;
   readonly ptcFactCollector?: PtcToolFactCollector;
+  readonly systemPrompt?: string;
+  readonly tools?: readonly unknown[];
 }
 
 export interface LocalTurnExecutionPreparation<TContext extends ToolExecutionContext> {

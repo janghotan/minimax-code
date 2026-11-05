@@ -241,6 +241,14 @@ export {
   type LlmCallUsageEntry,
 } from './usage-logger.js';
 export {
+  serializeRequestSnapshot,
+  findPrefixDivergence,
+  PrefixDivergenceTracker,
+  getSessionPrefixTracker,
+  type RequestSnapshot,
+  type DivergenceResult,
+} from './prefix-tracker.js';
+export {
   getOrDetectProjectPreflight,
   formatProjectPreflightLine,
   type ProjectPreflightInfo,
