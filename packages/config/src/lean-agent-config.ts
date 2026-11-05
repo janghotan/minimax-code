@@ -56,6 +56,26 @@ export interface LeanContextManagementConfig {
   readonly keepRawTurns: number;
 }
 
+export interface LeanDeclutterConfig {
+  /** Hard-disable daily check-in application (default: true) */
+  readonly disableDailyCheckin: boolean;
+  /** Hard-disable cloud website deployment (default: true) */
+  readonly disableCloudWebsiteDeploy: boolean;
+  /** Hard-disable Matrix/cloud MCP host (default: true) */
+  readonly disableMatrixTools: boolean;
+  /** Hard-disable telemetry network calls (default: true) */
+  readonly disableTelemetry: boolean;
+  /** Hard-disable mcode login and MiniMax account flows (default: true) */
+  readonly disableLoginFlows: boolean;
+}
+
+export interface LeanProviderConfig {
+  /** Primary API format (default: 'openai-completions') */
+  readonly defaultApiFormat: 'openai-completions' | 'anthropic-messages';
+  /** Default model ID (default: 'deepseek-chat') */
+  readonly defaultModel: string;
+}
+
 export interface LeanAgentSettings {
   readonly toolOutput: LeanToolOutputConfig;
   readonly testRunner: LeanTestRunnerConfig;
@@ -63,6 +83,8 @@ export interface LeanAgentSettings {
   readonly search: LeanSearchConfig;
   readonly edit: LeanEditConfig;
   readonly contextManagement: LeanContextManagementConfig;
+  readonly declutter: LeanDeclutterConfig;
+  readonly provider: LeanProviderConfig;
 }
 
 export const DEFAULT_LEAN_AGENT_SETTINGS: Readonly<LeanAgentSettings> = {
@@ -95,6 +117,17 @@ export const DEFAULT_LEAN_AGENT_SETTINGS: Readonly<LeanAgentSettings> = {
     compactionThreshold: 0.60,
     keepRawTurns: 2,
   },
+  declutter: {
+    disableDailyCheckin: true,
+    disableCloudWebsiteDeploy: true,
+    disableMatrixTools: true,
+    disableTelemetry: true,
+    disableLoginFlows: true,
+  },
+  provider: {
+    defaultApiFormat: 'openai-completions',
+    defaultModel: 'deepseek-chat',
+  },
 };
 
 let currentLeanSettings: LeanAgentSettings = { ...DEFAULT_LEAN_AGENT_SETTINGS };
@@ -113,6 +146,14 @@ export function updateLeanAgentSettings(overrides: Partial<LeanAgentSettings>): 
     contextManagement: {
       ...currentLeanSettings.contextManagement,
       ...(overrides.contextManagement ?? {}),
+    },
+    declutter: {
+      ...currentLeanSettings.declutter,
+      ...(overrides.declutter ?? {}),
+    },
+    provider: {
+      ...currentLeanSettings.provider,
+      ...(overrides.provider ?? {}),
     },
   };
 }

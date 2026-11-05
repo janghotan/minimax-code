@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { MavisBuildEnv, MavisRegion } from '@mavis/config';
+import { getLeanAgentSettings, type MavisBuildEnv, type MavisRegion } from '@mavis/config';
 
 export type McodeChatType = 'chat' | 'agent_team' | 'claw' | 'hermes' | 'IM';
 export type McodeLoginSource =
@@ -170,6 +170,10 @@ export function createMcodeBusinessTelemetry(
 
   const drain = async (): Promise<void> => {
     drainScheduled = false;
+    if (getLeanAgentSettings().declutter.disableTelemetry) {
+      queue.length = 0;
+      return;
+    }
     while (queue.length > 0) {
       const item = queue.shift();
       if (!item) continue;

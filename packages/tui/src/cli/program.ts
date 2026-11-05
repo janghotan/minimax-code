@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
 import { Command, InvalidArgumentError } from 'commander';
-import type { MavisRegion } from '@mavis/config';
+import { getLeanAgentSettings, type MavisRegion } from '@mavis/config';
 import { TuiContributionRegistry } from '../contributions/index.js';
 import type { RawTuiExecOptions } from '../headless/invocation.js';
 import {
@@ -143,11 +143,15 @@ export function createTuiProgram(options: CreateTuiProgramOptions): Command {
     .option('--region <region>', 'account region: cn or global', parseLoginRegion)
     .option('--no-browser', 'print the authorization URL without opening a browser')
     .allowExcessArguments(false)
-    .action((commandOptions: { region?: MavisRegion; browser?: boolean }) =>
-      activeLane
+    .action((commandOptions: { region?: MavisRegion; browser?: boolean }) => {
+      if (getLeanAgentSettings().declutter.disableLoginFlows) {
+        console.log("Login is disabled. This agent is BYOK-only. Configure providers with 'mcode provider add'.");
+        return;
+      }
+      return activeLane
         ? options.runLogin(commandOptions.region, commandOptions.browser !== false, activeLane)
-        : options.runLogin(commandOptions.region, commandOptions.browser !== false),
-    );
+        : options.runLogin(commandOptions.region, commandOptions.browser !== false);
+    });
 
   program
     .command('login')
@@ -155,11 +159,15 @@ export function createTuiProgram(options: CreateTuiProgramOptions): Command {
     .option('--region <region>', 'account region: cn or global', parseLoginRegion)
     .option('--no-browser', 'print the authorization URL without opening a browser')
     .allowExcessArguments(false)
-    .action((commandOptions: { region?: MavisRegion; browser?: boolean }) =>
-      activeLane
+    .action((commandOptions: { region?: MavisRegion; browser?: boolean }) => {
+      if (getLeanAgentSettings().declutter.disableLoginFlows) {
+        console.log("Login is disabled. This agent is BYOK-only. Configure providers with 'mcode provider add'.");
+        return;
+      }
+      return activeLane
         ? options.runLogin(commandOptions.region, commandOptions.browser !== false, activeLane)
-        : options.runLogin(commandOptions.region, commandOptions.browser !== false),
-    );
+        : options.runLogin(commandOptions.region, commandOptions.browser !== false);
+    });
 
   program
     .command('logout')
@@ -213,7 +221,7 @@ export function createTuiProgram(options: CreateTuiProgramOptions): Command {
       '--api-format <format>',
       MCODE_PROVIDER_API_FORMATS.join(', '),
       parseApiFormat,
-      'anthropic-messages',
+      'openai-completions',
     )
     .option('--model <id>', 'model ID (repeatable)', collectOptionValue, [])
     .option('--api-key-env <name>', 'environment variable containing the API key')

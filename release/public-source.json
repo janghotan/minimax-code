@@ -3710,6 +3710,7 @@
     "test/phase1-tool-diet.test.ts",
     "test/phase2-context-management.test.ts",
     "test/phase3-prompt-diet.test.ts",
+    "test/phase4-declutter-byok.test.ts",
     "test/public-artifact.test.mjs",
     "test/smoke.test.mjs",
     "test/source-sync.test.mjs",

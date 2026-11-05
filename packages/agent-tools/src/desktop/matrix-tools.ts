@@ -1,3 +1,4 @@
+import { getLeanAgentSettings } from '@mavis/config';
 import type { RuntimeTool, ToolExecutionContext } from '@mavis/agent-core/tools';
 import type { TSchema } from '@sinclair/typebox';
 import {
@@ -30,6 +31,9 @@ export interface BuildDesktopMatrixToolsOptions {
 export function buildDesktopMatrixRuntimeTools(
   options: BuildDesktopMatrixToolsOptions,
 ): Array<RuntimeTool<TSchema, ToolExecutionContext>> {
+  if (getLeanAgentSettings().declutter.disableMatrixTools) {
+    return [];
+  }
   const executor =
     options.executor ??
     new DesktopMatrixClient({

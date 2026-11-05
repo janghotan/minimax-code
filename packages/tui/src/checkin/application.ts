@@ -1,3 +1,4 @@
+import { getLeanAgentSettings } from '@mavis/config';
 import {
   SigninClaimResult,
   isSigninPanelClaimable,
@@ -41,6 +42,12 @@ export class TuiDailyCheckinApplication {
   }
 
   private async runOnce(): Promise<TuiDailyCheckinOutcome> {
+    if (getLeanAgentSettings().declutter.disableDailyCheckin) {
+      return {
+        status: 'unavailable',
+        panel: { canSignin: false, isSignin: false, signinList: [] },
+      };
+    }
     const panel = validateSigninPanel(await this.gateway.getSigninPanel());
     if (isSigninPanelClaimedToday(panel)) {
       return { status: 'already-claimed', panel };
