@@ -4,23 +4,32 @@ const PINK_RGB: readonly [number, number, number] = [255, 0, 122];
 const ORANGE_RGB: readonly [number, number, number] = [255, 122, 0];
 
 /**
- * Official MiniMax audio waveform logo in Unicode curves and box art:
- * Left hook, 1st wave, tall 2nd wave, split center pillar, tall 4th wave, 5th wave, right hook.
+ * Official MiniMax audio waveform logo in high-fidelity Unicode block art:
+ * 9 vertical pillars with equal 2-column width and 2-space pitch:
+ * Left hook (top cap, bottom loop), 1st wave, tall 2nd wave, split center pillar,
+ * deepest bottom loop, tall 4th wave, 5th wave, right hook (bottom cap).
  */
 export const MINIMAX_LOGO_ART = [
-  '       ╭╮     ╭╮       ',
-  '  ╭╮   ││ ╭╮  ││   ╭╮  ',
-  '╭╮││ ╭╮││ ││  ││╭╮ ││╭╮',
-  '││││ ││││ ╰╯  ││││ ││││',
-  '╰╯││ ││││ ╭╮  ││││ ││╰╯',
-  '  ╰╯ ╰╯╰╯ ││  ╰╯╰╯ ╰╯  ',
-  '          ╰╯           ',
+  '            ▄█▀▀█▄  ▄█▀▀█▄        ',
+  '            ██  ██  ██  ██        ',
+  '    ▄█▀▀█▄  ██  ██  ██  ██  ▄█▀▀█▄',
+  '    ██  ██  ██  ██  ██  ██  ██  ██',
+  '▄▄  ██  ██  ██  ██  ██  ██  ██  ██',
+  '██  ██  ██  ██  ██  ██  ██  ██  ██',
+  '▀█▄▄█▀  ██  ██  ▀▀  ██  ██  ██  ▀▀',
+  '        ██  ██  ▄▄  ██  ▀█▄▄█▀    ',
+  '        ▀█▄▄█▀  ██  ██            ',
+  '                ▀█▄▄█▀            ',
 ] as const;
 
 export const COMPACT_MINIMAX_LOGO_ART = [
-  ' ╭╮ ╭╮ ╭╮ ',
-  '╭╯╰╮││╭╯╰╮',
-  '╰──╯╰╯╰──╯',
+  '      ▄▀▄ ▄▀▄    ',
+  '  ▄▀▄ █ █ █ █ ▄▀▄',
+  '▄ █ █ █ █ █ █ █ █',
+  '▀▄▀ █ █ ▀ █ █ █ ▀',
+  '    █ █ ▄ █ ▀▄▀  ',
+  '    ▀▄▀ █ █      ',
+  '        ▀▄▀      ',
 ] as const;
 
 /**
@@ -58,13 +67,18 @@ export function applyPinkToOrangeGradient(text: string, isColored: boolean = sup
 
   let result = '';
   for (let i = 0; i < total; i++) {
-    const factor = i / (total - 1);
+    const char = chars[i];
+    if (char === ' ') {
+      result += ' ';
+      continue;
+    }
+    const factor = total > 1 ? i / (total - 1) : 0;
     const r = PINK_RGB[0] + factor * (ORANGE_RGB[0] - PINK_RGB[0]);
     const g = PINK_RGB[1] + factor * (ORANGE_RGB[1] - PINK_RGB[1]);
     const b = PINK_RGB[2] + factor * (ORANGE_RGB[2] - PINK_RGB[2]);
-    result += `${BOLD_ANSI}${rgbAnsi(r, g, b)}${chars[i]}`;
+    result += `${BOLD_ANSI}${rgbAnsi(r, g, b)}${char}${RESET_ANSI}`;
   }
-  return `${result}${RESET_ANSI}`;
+  return result;
 }
 
 /**
@@ -74,7 +88,7 @@ export function applyPinkToOrangeGradient(text: string, isColored: boolean = sup
  */
 export function renderWaveformHeader(width: number): string[] {
   const isColored = supportsColors();
-  const art = width >= 30 ? MINIMAX_LOGO_ART : COMPACT_MINIMAX_LOGO_ART;
+  const art = width >= 36 ? MINIMAX_LOGO_ART : COMPACT_MINIMAX_LOGO_ART;
 
   const formattedLines: string[] = [];
   for (const rawLine of art) {
