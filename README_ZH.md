@@ -2,311 +2,190 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/wordmark-dark.svg">
     <source media="(prefers-color-scheme: light)" srcset="docs/assets/wordmark-light.svg">
-    <img src="docs/assets/wordmark-light.svg" alt="MiniMax Code" width="760">
+    <img src="docs/assets/wordmark-light.svg" alt="Minimax-coder" width="760">
   </picture>
 </p>
 
-<h1 align="center">MiniMax Code</h1>
-<p align="center">把一句话，做成能运行的东西。用 MiniMax 或自己的模型，在终端里构建、验证、继续改进。</p>
+<h1 align="center">Minimax-coder</h1>
+<p align="center"><strong>面向终端的高性能、极致省 Token 资深工程师 AI 编程助手</strong></p>
 <p align="center">
-  <a href="#快速开始">Get started</a> ·
-  <a href="docs/README.md">Documentation</a> ·
-  <a href="docs/examples.md">Examples</a> ·
-  <a href="CONTRIBUTING.md">Contributing</a>
+  <a href="#快速上手">快速上手</a> ·
+  <a href="#核心特性">核心特性</a> ·
+  <a href="#模型提供商与价格表">BYOK 与价格表</a> ·
+  <a href="#斜杠指令">斜杠指令</a> ·
+  <a href="README.md">English Documentation</a>
 </p>
 <p align="center"><a href="README.md">English</a> · <strong>简体中文</strong></p>
-<p align="center">
-  <img src="docs/assets/source-preview.svg" alt="Source preview">
-  <img src="docs/assets/node.svg" alt="Compatibility: Node.js 22.19+, 24.2+, 25, and 26">
-  <a href="LICENSE-STATUS.md"><img src="docs/assets/license.svg" alt="First-party default license: MIT"></a>
-</p>
 
-给一个会眨眼的小宠物加上番茄钟，再追问一句：“长按才能暂停，结束时跳舞。”看代码变成可以亲手操作的结果。
+---
 
-[![Pocket Pet：从会眨眼到会陪你专注](docs/assets/pocket-pet-demo.png)](docs/demo.md)
+## 概述
 
-<p align="center"><a href="docs/demo.md">看真实修改与浏览器演示 →</a> · <a href="examples/pocket-pet">自己做一次 →</a></p>
+**Minimax-coder** 是专为追求极致响应速度、代码工程质量与超低 Token 消耗的开发者打造的终端 AI 编程助手。
 
-**无需硬件。** 示例在本地浏览器运行，不需要前端依赖。让 CLI 修改代码需要 MiniMax 账号及可用额度，或你自己的兼容模型 API；模型调用可能产生费用。完成版可直接运行，无需模型账号。
+界面采用 MiniMax 标志性的**粉橙渐变艺术设计**（`#FF007A` → `#FF7A00`）与高精度声波 Logo，可直接作为**单一原生独立二进制文件（`./Minimax-coder`）**运行。它彻底剔除了云端遥测打点、每日签到和登录限制等无关包袱，专注于提供顶级资深架构师（Senior Staff Engineer）级别的代码实现，强制使用规范的**简体中文注释与文档**，支持 Google Gemini、Anthropic Claude、DeepSeek、OpenAI 与本地 Ollama 的全功能 BYOK 接入，并具备实时人民币（¥ CNY）消耗监控。
 
-## 快速开始
+---
 
-### 1. 安装 MCode
+## 核心特性
 
-按操作系统选择官方安装器。安装器会安装最新版 CLI，并在需要时准备兼容的 Node.js，无需 `sudo` 或管理员权限；目前不支持 Alpine / musl Linux。
+### 1. 🚀 极致省 Token 引擎（节省 70%+ Token 消耗）
+- **工具输出内联限制**：单次工具输出限制在 8KB / 200 行以内；超大日志与结果自动沉淀至 `.mcode/artifacts/` 并生成高密度摘要。
+- **静默测试背压（Quiet Test Backpressure）**：过滤冗余堆栈噪音与冗长通过记录，仅保留核心回执（如 `PASS (4/4 tests)`）。
+- **会话内读取去重**：单轮对话中重复读取相同文件直接返回内存指针，不再重复计入上下文 Prompt。
+- **历史观测压缩（Observation Masking）**：智能折叠早期工具调用结果，仅保留最新交互内容，保持上下文高度精简。
+- **精简 7 工具核心协议**：仅提供最核心的 7 个精炼工具（`bash`, `read_file`, `edit_file`, `write_file`, `glob`, `grep`, `git`）。系统提示词 + 工具模式仅占 **722 tokens**（远低于 1500 tokens 上限）。
 
-**macOS / Linux / WSL**
+### 2. 🧠 资深架构师编码规范（Senior Staff Engineer）
+- **工业级生产质量**：输出类型安全、架构严谨、性能卓越、可扩展且符合工程最佳实践的高质量代码。
+- **强制简体中文注释与文档**：所有代码注释、函数 Docstring、行内注解与设计说明**一律使用简体中文编写**，代码标识符保留标准英文命名。
 
+### 3. 🌐 超大上下文窗口与全能 BYOK
+- **自动解锁超大上下文**：根据模型智能适配真实上下文上限：
+  - **Google Gemini**（`gemini-3.8-flash-high`, `gemini-3-flash`, `gemini-2.5-flash`）：**1,000,000 tokens（1.0M）**
+  - **Gemini Pro**（`gemini-3-pro`, `gemini-2.5-pro`, `gemini-1.5-pro`）：**2,000,000 tokens（2.0M）**
+  - **Anthropic Claude**（`claude-3-7-sonnet`, `claude-3-5-sonnet`）：**200,000 tokens（200k）**
+  - **DeepSeek 与 OpenAI**（`deepseek-v3`, `deepseek-r1`, `gpt-4o`, `o1`, `o3-mini`）：**128,000+ tokens（131k）**
+  - **默认兜底下限**：**131,072 tokens（128k）**。
+- **通用 BYOK 支持**：一键接入任意 OpenAI 兼容端点、Google Gemini API、Anthropic Claude 或本地 Ollama 模型，彻底摆脱平台锁定。
+
+### 4. 💰 实时人民币（CNY）花费与 Token 消耗监控
+- **底部常驻状态栏**：
+  ```text
+  🧠 52k/1.0M (5%) · 💰 ¥0.027 · 🔁 3
+  ```
+- **智能模糊匹配**：基于 `pricing.json` 自动解析模型家族，精确计算 Cache-hit（缓存命中）与 Cache-miss（首次输入）人民币费用。
+- **交互式 `/cost` 指令**：随时查看当前会话的详细花费、Token 数量与缓存命中率。
+
+### 5. 🎨 极简单行 TUI 与彩色文件 Diff 标识
+- 单行 Emoji 紧凑工具呈现：
+  ```text
+  ✏️  packages/tui/src/index.ts (+23)(-3)
+  ✅ $ pnpm test 2.1s
+  📖 src/api.ts 120L
+  🔍 grep "renderWaveform" 4 matches
+  ```
+- 修改文件时**绿色增加行 `(+23)`** 与**红色删除行 `(-3)`** 实时高亮显示。
+
+### 6. 🛡️ 纯净轻量，零冗余
+- 禁用一切云端遥测、统计与私有埋点。
+- 禁用每日签到弹窗与云端网站部署引导。
+- 独立可执行二进制文件，开箱即用。
+
+---
+
+## 快速上手
+
+### 方式 1：运行独立二进制程序
+直接运行预构建的二进制文件：
 ```bash
-curl -fsSL https://filecdn.minimax.chat/public/install.sh | bash
+./Minimax-coder
 ```
 
-**Windows（PowerShell）**
-
-```powershell
-irm https://filecdn.minimax.chat/public/install.ps1 | iex
-```
-
-脚本在 macOS / Linux / WSL 上默认安装到 `~/.minimax-code`，在 Windows 上默认安装到 `%USERPROFILE%\.minimax-code`。POSIX 启动器为 `bin/mcode` 和 `bin/mcode-tools`；Windows 启动器为 `mcode.cmd` / `mcode.ps1` 和 `mcode-tools.cmd` / `mcode-tools.ps1`。安装前设置 `MCODE_INSTALL_DIR` 可更改安装位置。移除 CLI 的方法见[卸载](#卸载)。
-
-**npm**：适用于已安装 **Node.js 22.19+（22.x）、24.2+（24.x）、25 或 26** 的环境。
-
+### 方式 2：从源码编译构建
 ```bash
-npm install -g @minimax-ai/code@latest --registry=https://registry.npmjs.org/ --ignore-scripts=false --include=optional --allow-scripts=@minimax-ai/code,better-sqlite3
-```
+# 1. 安装项目依赖
+pnpm install
 
-该 npm 命令使用公共 registry，包含可选的 SQLite 依赖，并允许执行主包和 SQLite 的安装脚本。固定版本和 Node.js 兼容范围见[安装指南](docs/installation.md)。
-
-重新打开终端后检查安装：
-
-```bash
-mcode --version
-mcode --help
-```
-
-参阅官网的[快速开始](https://agent.minimaxi.com/docs/cli/quick-start)、[功能与配置](https://agent.minimaxi.com/docs/cli/features)和[故障排查](https://agent.minimaxi.com/docs/cli/faq)。
-
-### 2. 登录账号或配置 API Key
-
-中国大陆账号运行：
-
-```bash
-mcode login
-```
-
-Global 账号运行：
-
-```bash
-mcode login --region global
-```
-
-在浏览器中完成登录，再启动 `mcode`，通过 `/status` 检查账号、通过 `/provider` 选择模型。退出登录使用 `mcode logout`。
-
-Token Plan 需要账号与可用额度。从本仓库构建的版本与已发布的 npm CLI `@minimax-ai/code@0.6.9` 均默认将用户数据保存在 `~/.minimax`（选择 profile 时为 `~/.minimax-<profile>`）。`MINIMAX_DATA_DIR` 或 `MAVIS_DATA_DIR` 可以覆盖数据目录。安装脚本使用的 `~/.minimax-code` 安装目录与数据目录的选择是两回事。查找或删除配置和会话前，请参阅[账号与数据](docs/installation.md#accounts-and-data)。
-
-<details>
-<summary>使用自己的 API Key（BYOK）</summary>
-
-BYOK 无需先登录 MiniMax。先在当前 shell 中设置 `MCODE_PROVIDER_API_KEY`，再添加提供方；将下方示例地址和模型名替换为实际配置：
-
-```bash
-mcode provider add --name my-provider --base-url https://example.com/v1 \
-  --api-format openai-completions --model my-model \
-  --api-key-env MCODE_PROVIDER_API_KEY --use
-mcode
-```
-
-`--use` 会先测试第一个模型，成功后保存并设为默认模型；连接测试失败时不保存。省略 `--use` 则仅保存，不测试，也不改变默认模型。对于自定义或本地模型，可添加 `--context-limit 32768 --output-limit 4096`（请填写服务器的实际限制）。两个值都必须是正安全整数，并应用于所有重复指定的 `--model`。可通过 `mcode provider list --json` 查看已配置的限制。省略这两个参数时保持现有的模型限制默认值。
-
-支持 `openai-completions`、`openai-responses` 和 `anthropic-messages`。连接测试、单次模型切换及环境变量设置见 [模型示例](docs/examples.md#2-choose-your-own-model)。
-
-通过该命令添加的提供方保存在当前 profile `config.yaml` 的 `custom_provider` 下；第三方或自建端点一律走这条路径，`minimax_api` 保留给官方 MiniMax API。若中转端点只提供 Anthropic 兼容接口且要求 `Authorization: Bearer` 鉴权，可在 `config.yaml` 中为提供方配置自定义 headers；见[第三方中转与自定义鉴权头](docs/examples.md#third-party-relays-and-custom-auth-headers)。
-
-</details>
-
-### 3. 做一个自己的桌面宠物
-
-克隆仓库，把起始工程复制到独立目录：
-
-```bash
-git clone https://github.com/MiniMax-AI/minimax-code.git
-cd minimax-code
-node examples/pocket-pet/setup.mjs ../my-pocket-pet
-cd ../my-pocket-pet
-node serve.mjs
-```
-
-打开 `http://127.0.0.1:4173`。另开一个终端，在 `my-pocket-pet` 目录运行 `mcode`，依次粘贴[第一条提示词](examples/pocket-pet/README.md#first-request)和[追加需求](examples/pocket-pet/README.md#change-the-requirement)，每次修改后刷新浏览器。
-
-想先体验成品？在仓库根目录运行 `node examples/pocket-pet/serve.mjs finished`，打开同一地址。加上 `?demo=1` 可体验有明确标识的 10 秒演示模式。
-
-[完整教程与使用条件](examples/pocket-pet) · [小型代码修复示例](examples/clamp) · [模型、搜索与工具](docs/examples.md)
-
-
-### 在自己的项目中使用
-
-进入要处理的项目目录：
-
-```bash
-cd /path/to/your/project
-mcode
-```
-
-在 TUI 中描述任务，也可以在启动时直接提交：
-
-```bash
-mcode "Find a failing test, fix the implementation, and run the relevant tests."
-```
-
-使用 `mcode init .` 生成或更新 `AGENTS.md` 项目指导。任务中应说明期望结果、修改边界和验证方式。
-
-| 入口 | 命令 | 适用场景 |
-| --- | --- | --- |
-| 交互式 TUI | `mcode [prompt]` | 探索代码、持续对话、审阅修改与权限确认。 |
-| Headless | `mcode exec [prompt]` | Shell、CI、批处理与评测。 |
-| ACP | `mcode acp` | 支持 Agent Client Protocol 的编辑器与客户端。 |
-| TypeScript SDK | [`@minimax-ai/code-sdk`](packages/code-sdk/README.md) | 在 Node.js 代码中驱动 `mcode exec`：启动、流式读取和续跑对话。 |
-
-### 轻量对话
-
-对于简单对话或通用知识问答，可用 `--mode lightweight` 创建新会话：
-
-```bash
-mcode --mode lightweight "解释 DNS 缓存的工作原理。"
-mcode exec --mode lightweight "概述 CAP 定理。"
-```
-
-轻量模式只发送精简的对话系统提示词，不发送工具 schema，并从提供方上下文中省略工作区
-指令、Skills、memory 块、MCP schema 和完整环境块，因此不能检查或修改本地文件。需要编程或工具能力时，请使用
-`mcode --mode standard` 或 `mcode exec --mode standard` 创建新的标准会话；省略 `--mode`
-与标准模式完全一致。
-
-模式在根会话创建时固定，因此 `--mode lightweight` 不能与 `--session` 或 `--continue`
-同时使用。子代理/子会话不会继承轻量模式，`/compact` 仍使用标准压缩上下文，ACP 与桌面端
-会话也始终使用标准模式。重新打开轻量会话时会保留该模式，并在 TUI 状态栏显示
-`Lightweight`；从轻量模式启动的 TUI 打开标准会话时仍保持标准模式，且不显示该标记。
-
-### 继续之前的工作
-
-```bash
-# 恢复当前工作区最近的会话
-mcode --continue
-
-# 打开会话选择器
-mcode --session
-```
-
-在 TUI 中输入 `/sessions` 查找历史会话，输入 `/help` 查看完整命令与快捷键。
-
-| 操作 | 快捷键 |
-| --- | --- |
-| 发送消息，或在任务运行中调整当前响应 | `Enter` |
-| 在任务运行中将后续消息加入队列 | `Alt+Enter` |
-| 在输入框中换行 | `Shift+Enter` |
-| 引用工作区文件或目录 | `@` |
-| 切换 Plan Mode | `Shift+Tab` |
-| 切换权限模式 | `Alt+M` |
-| 关闭面板或中断正在运行的任务；在模型回复之前中断会把消息放回输入框 | `Esc` |
-
-## 卸载
-
-卸载前请关闭正在运行的 MCode 会话，包括编辑器中的集成。先通过 `command -v mcode`（macOS / Linux / WSL）或 `Get-Command mcode -All`（PowerShell）定位命令，再按对应的安装方式操作。当前官方安装脚本**不提供卸载参数**。
-
-### 通过脚本安装
-
-以下命令会删除默认安装目录，包括两个启动器、下载的版本，以及安装器管理的 Node.js 运行时。如果使用过 `MCODE_INSTALL_DIR`，请替换为实际安装目录。删除前请先检查：早期源码构建曾将用户数据保存在 `~/.minimax-code`，自定义数据目录也可能与安装目录重合。请先备份需要保留的配置和会话。
-
-**macOS / Linux / WSL**
-
-```bash
-rm -rf -- "$HOME/.minimax-code"
-```
-
-从安装器修改的 shell 配置文件中删除 `# MiniMax Code CLI` 注释及其下一行 PATH 配置：zsh 使用 `~/.zshrc`；bash 依次选择 `~/.bashrc`、`~/.bash_profile`、`~/.profile` 中第一个已存在的文件，均不存在时创建 `~/.bashrc`；fish 使用 `~/.config/fish/config.fish`；其他 shell 使用 `~/.profile`。对应配置为 `export PATH="/absolute/install/path/bin:$PATH"`，fish 则为 `fish_add_path -g "/absolute/install/path/bin"`。只移除 MCode 对应的条目，保留其他 PATH 设置。如果设置了 `MCODE_NO_MODIFY_PATH` 或路径已存在，安装器会跳过此修改。
-
-**Windows（PowerShell）**
-
-```powershell
-Remove-Item -LiteralPath "$env:USERPROFILE\.minimax-code" -Recurse -Force
-```
-
-打开“编辑账户的环境变量”，编辑用户 **Path**，仅删除安装目录对应的条目（默认为 `%USERPROFILE%\.minimax-code`，也可能显示为展开后的绝对路径）。Windows 安装器修改的是用户 Path，不是 PowerShell 配置文件；设置 `MCODE_NO_MODIFY_PATH` 会跳过此持久化修改。
-
-### 通过 npm 或源码安装
-
-全局 npm 安装请使用当初安装 MCode 时的同一套 npm 和安装前缀：
-
-```bash
-npm uninstall -g @minimax-ai/code
-```
-
-源码构建请先保存工作，再仅删除自己创建的源码目录，详见[更新或移除](docs/installation.md#update-or-remove)。
-
-卸载后重新打开终端（编辑器集成终端需要完全重启编辑器），再次运行 `command -v mcode` 或 `Get-Command mcode -All`。没有结果表示 PATH 中已找不到该命令。如果出现另一份安装，请先确认它的安装方式再移除。
-
-### 可选：删除用户数据
-
-移除程序会保留单独存储的用户数据。如果还要删除本地登录状态、提供方配置、缓存和会话，请先按[账号与数据](docs/installation.md#accounts-and-data)确认实际数据目录，并备份需要保留的内容。其他 MCode 安装可能共用该目录。以下命令仅适用于默认的 `~/.minimax`：
-
-```bash
-# macOS / Linux / WSL — 永久删除默认用户数据
-rm -rf -- "$HOME/.minimax"
-```
-
-```powershell
-# Windows — 永久删除默认用户数据
-Remove-Item -LiteralPath "$env:USERPROFILE\.minimax" -Recurse -Force
-```
-
-profile 使用 `~/.minimax-<profile>`；`MINIMAX_DATA_DIR` 或 `MAVIS_DATA_DIR` 可以指定其他位置。只删除确定不再需要的具体目录，不要使用通配符批量删除。如果不再需要自行添加的 MCode 环境变量，也请从 shell 配置或用户环境变量设置中移除对应赋值。
-
-## 可以做什么
-
-| 场景 | 使用方式 |
-| --- | --- |
-| **修改与验证代码** | 读取文件、编辑 diff、执行 Shell 和测试；通过权限与沙箱控制工具执行。 |
-| **选择模型** | MiniMax 账号 / Token Plan，或兼容 OpenAI、Anthropic 格式的自定义提供方。 |
-| **搜索与多模态** | 内置搜索、`mcode-tools` 媒体工具、MCP 和托管连接器；按账号权限和服务额度使用。 |
-| **延续工作** | 会话恢复、任务规划、子 Agent、官方 / 本地 / GitHub 插件与内置 Skills。 |
-| **接入工作流** | Headless CLI 用于脚本任务，ACP 用于兼容的编辑器和客户端。 |
-
-账号、更新、反馈与诊断能力也在。托管工具需要网络和相应授权，详细边界见 [能力与服务边界](docs/tui-capabilities.md)。
-
-
-## 从源码构建
-
-开发 MCode 或运行本仓库源码需要 Git、Node.js **22.19+（22 系列）、24.2+（24 系列）、25 或 26**，以及 **pnpm 9.12.0**。在 Windows 上，请将源码放在本地 NTFS 卷上，并避开云同步目录；下面的预检命令会在 pnpm 创建 workspace link 前检查卷类型。
-```bash
-git clone https://github.com/MiniMax-AI/minimax-code.git
-cd minimax-code
-node scripts/check-windows-source-location.mjs
-pnpm install --frozen-lockfile
+# 2. 构建项目及二进制可执行文件
 pnpm build
-pnpm mcode
+pnpm run build:binary
+
+# 3. 运行 Minimax-coder
+./Minimax-coder
 ```
 
-首次构建需要联网；依赖和经过校验的 `mcode-tools` 均来自公共 npm。pnpm 安装、系统依赖和更新方法见[源码安装指南](docs/installation.md)。
+---
 
-从源码目录运行时，将上方示例中的 `mcode` 替换为 `pnpm mcode`。要在自己的项目中工作，先切换到项目目录，再运行构建产物：
+## 配置模型服务商（BYOK）
 
+在终端中轻松配置并切换任意模型：
+
+### 1. Google Gemini（例如 `gemini-3.8-flash-high` / `gemini-3-flash`）
 ```bash
-node /absolute/path/to/minimax-code/dist/cli.js
+export GEMINI_API_KEY="你的-gemini-key"
+./Minimax-coder provider add \
+  --name gemini \
+  --base-url https://generativelanguage.googleapis.com/v1beta/openai/ \
+  --api-format openai-completions \
+  --model gemini-3.8-flash-high \
+  --api-key-env GEMINI_API_KEY \
+  --use
 ```
 
-本仓库目标为 **0.6.3 源码预览**。安装已发布的包与构建本仓库是两条独立路径，版本一致不代表构建来源完全相同，详见[版本与证据基线](docs/open-source-status.md#version-and-evidence-baseline)。
+### 2. DeepSeek（例如 `deepseek-v3` / `deepseek-r1`）
+```bash
+export DEEPSEEK_API_KEY="你的-deepseek-key"
+./Minimax-coder provider add \
+  --name deepseek \
+  --base-url https://api.deepseek.com/v1 \
+  --api-format openai-completions \
+  --model deepseek-v3 \
+  --api-key-env DEEPSEEK_API_KEY \
+  --use
+```
 
-## 文档与贡献
+### 3. Anthropic Claude（例如 `claude-3-7-sonnet`）
+```bash
+export ANTHROPIC_API_KEY="你的-claude-key"
+./Minimax-coder provider add \
+  --name anthropic \
+  --base-url https://api.anthropic.com \
+  --api-format anthropic-messages \
+  --model claude-3-7-sonnet-20250219 \
+  --api-key-env ANTHROPIC_API_KEY \
+  --use
+```
 
-- [安装与更新](docs/installation.md) · [使用示例](docs/examples.md) · [TUI 状态栏](packages/tui/docs/status-line-config.md)
-- [贡献指南](CONTRIBUTING.md) · [报告 Bug / 提出建议](https://github.com/MiniMax-AI/minimax-code/issues/new/choose) · [报告安全问题](SECURITY.md)
-- [全部文档](docs/README.md)：架构、能力对照、验证记录、源码同步和发布流程。
+### 4. 本地 Ollama
+```bash
+./Minimax-coder provider add \
+  --name local-ollama \
+  --base-url http://localhost:11434/v1 \
+  --api-format openai-completions \
+  --model qwen2.5-coder:32b \
+  --use
+```
 
-项目文档以英文为主，本页为首页的简体中文译文。
+---
 
-目前仅接受仓库协作者提交代码和文档 Pull Request。如果你不是协作者，但有想法或方案，欢迎先通过 [Issue](https://github.com/MiniMax-AI/minimax-code/issues/new/choose) 讨论。请在报告中移除密钥、账号信息和私人项目内容。
+## 模型价格参考表（`pricing.json`）
 
-## 桌面版与问题反馈
+计价数据配置于根目录 `pricing.json`，单位为人民币（¥ CNY / 每百万 Tokens）：
 
-<a href="https://agent.minimaxi.com/download" title="下载 MiniMax Code">
-  <img src="https://filecdn.minimax.chat/public/c3ebbd2e-f55b-48d7-adff-030abb63e06d.png" alt="MiniMax Code 桌面版 — 点击下载" width="100%" />
-</a>
+| 模型系列 | 缓存命中输入 (Cache Hit) | 首次输入 (Cache Miss) | 输出 Token | 上下文窗口限制 |
+|---|---|---|---|---|
+| **Google Gemini 3.8 Flash High** | ¥0.136 / 1M | ¥0.544 / 1M | ¥2.175 / 1M | **1,000,000 (1.0M)** |
+| **Google Gemini 3 Flash** | ¥0.136 / 1M | ¥0.544 / 1M | ¥2.175 / 1M | **1,000,000 (1.0M)** |
+| **Google Gemini 3 Pro / 2.5 Pro** | ¥2.270 / 1M | ¥9.060 / 1M | ¥36.250 / 1M | **2,000,000 (2.0M)** |
+| **DeepSeek V3** | ¥0.500 / 1M | ¥2.000 / 1M | ¥8.000 / 1M | **131,072 (128k)** |
+| **DeepSeek R1** | ¥1.000 / 1M | ¥4.000 / 1M | ¥16.000 / 1M | **131,072 (128k)** |
+| **MiniMax Text 01 / 02** | ¥1.000 / 1M | ¥1.000 / 1M | ¥1.000 / 1M | **131,072 (128k)** |
+| **Claude 3.7 Sonnet** | ¥2.720 / 1M | ¥21.750 / 1M | ¥108.750 / 1M | **200,000 (200k)** |
+| **OpenAI GPT-4o** | ¥9.060 / 1M | ¥18.130 / 1M | ¥72.500 / 1M | **128,000 (128k)** |
+| **OpenAI o3-mini** | ¥4.000 / 1M | ¥8.000 / 1M | ¥32.000 / 1M | **128,000 (128k)** |
+| **OpenAI o1** | ¥54.380 / 1M | ¥108.750 / 1M | ¥435.000 / 1M | **128,000 (128k)** |
+| **本地 Ollama** | ¥0.000 | ¥0.000 | ¥0.000 | 本地免费 |
 
-[下载 macOS 或 Windows 桌面版](https://agent.minimaxi.com/download) · [报告问题或提问](https://github.com/MiniMax-AI/minimax-code/issues/new/choose)
+---
 
-本仓库也承接 MiniMax Code 桌面版的问题反馈。公开源码范围为终端 TUI、Headless CLI 和 ACP，不包含桌面应用源码。提交 Issue 时请选择对应产品。桌面版问题请注明应用版本、操作系统，以及「设置 → 通用 → 上传日志」生成的日志上传 ID（如可用）；CLI 问题请注明 `mcode --version`、运行入口与最小复现。报告中请移除凭据和私人项目内容。
+## 常用斜杠指令（Slash Commands）
 
-## 反馈与联系我们
+在交互式终端中，随时输入指令管理当前会话：
 
-| 渠道 | 适用场景 |
-| --- | --- |
-| [GitHub Issues](https://github.com/MiniMax-AI/minimax-code/issues/new/choose) | 公开报告 CLI 或桌面版的 Bug、提出功能建议与使用问题。 |
-| [MiniMaxCode@minimax.io](mailto:MiniMaxCode@minimax.io) | 一般反馈与支持咨询。 |
-| [security.mcode@minimax.io](mailto:security.mcode@minimax.io) | 私密报告安全漏洞。请通过此邮箱发送复现步骤和脱敏证据，详见[安全报告指南](SECURITY.md)。 |
-| [Discord](https://minimax.io/discord) | 社区交流与反馈。 |
-| [飞书反馈群二维码](https://cdn.hailuoai.com/hailuo-video-web/public_assets/minimax_code_feishu_group_url.png) | 中文社区反馈。使用飞书扫码，或在中文版桌面应用的用户菜单 → **联系我们 → 飞书** 中查看二维码。 |
+| 指令 | 说明 |
+|---|---|
+| `/cost` | 查看当前会话的费用统计（缓存命中数、首次输入数、输出数与累计人民币花费） |
+| `/context` | 查看当前会话上下文占用、使用百分比与压缩状态 |
+| `/diff` | 查看当前代码修改的紧凑 Unified Diff |
+| `/undo` | 撤销上一步 AI 工具对代码文件的修改 |
+| `/test` | 运行静默测试背压套件，获取简明测试回执 |
+| `/compact` | 手动触发上下文压缩，释放可用 Token 空间 |
+| `/plan` | 切换至架构规划模式，先设计再执行 |
+| `/provider` | 管理或切换当前使用的 AI 模型与提供商 |
 
-也可关注 [MiniMax 的 X 账号](https://x.com/MiniMaxAgent) 获取动态。请勿在公开 Issue 或社区聊天中发布漏洞细节、凭据和私人项目内容。
+---
 
-## 许可
+## 许可证
 
-第一方代码默认采用 [MIT](LICENSE)；文件或子包已有独立声明时保留原许可。依赖、资源与 `mcode-tools` 的许可分别见 [第三方声明](THIRD_PARTY_NOTICES.md) 和 [许可状态](LICENSE-STATUS.md)。
+本项目遵循 [MIT 许可证](LICENSE-STATUS.md)。

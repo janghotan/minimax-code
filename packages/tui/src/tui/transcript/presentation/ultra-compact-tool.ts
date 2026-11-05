@@ -49,6 +49,10 @@ export function formatUltraCompactToolLine(cell: TranscriptCell, maxWidth?: numb
     title === 'edit' ||
     title === 'write_file' ||
     title === 'write' ||
+    title === 'patch' ||
+    title === 'apply_patch' ||
+    title === 'update_file' ||
+    title === 'create_file' ||
     cell.kind === 'diff'
   ) {
     const diffBlock = cell.structuredPreview?.blocks?.find(
@@ -58,12 +62,64 @@ export function formatUltraCompactToolLine(cell: TranscriptCell, maxWidth?: numb
       (input.file_path as string) ||
       (input.filePath as string) ||
       (input.path as string) ||
+      (input.file as string) ||
       diffBlock?.path ||
       'file';
     const filePath = sanitizeTerminalText(rawPath).trim();
 
-    const added = diffBlock?.addedLines ?? 0;
-    const removed = diffBlock?.removedLines ?? 0;
+    let added = diffBlock?.addedLines ?? 0;
+    let removed = diffBlock?.removedLines ?? 0;
+
+    // Fallback 1: Extract from edit/write tool input arguments
+    if (added === 0 && removed === 0) {
+      const oldHunk =
+        (input.old_hunk as string) ||
+        (input.old_str as string) ||
+        (input.oldContent as string) ||
+        (input.target as string) ||
+        (input.Target as string);
+      const newHunk =
+        (input.new_hunk as string) ||
+        (input.new_str as string) ||
+        (input.newContent as string) ||
+        (input.replacement as string) ||
+        (input.Replacement as string);
+
+      if (oldHunk !== undefined || newHunk !== undefined) {
+        if (oldHunk) removed = oldHunk.split('\n').length;
+        if (newHunk) added = newHunk.split('\n').length;
+      } else {
+        const fullContent = (input.content as string) || (input.Content as string);
+        if (fullContent !== undefined) {
+          added = fullContent.split('\n').length;
+        }
+      }
+    }
+
+    // Fallback 2: Parse unified diff lines in cell.detail or cell.content
+    if (added === 0 && removed === 0) {
+      const diffText = (cell.detail ?? '') + '\n' + (typeof cell.content === 'string' ? cell.content : '');
+      let countAdd = 0;
+      let countRem = 0;
+      for (const line of diffText.split('\n')) {
+        if (line.startsWith('+') && !line.startsWith('+++')) countAdd++;
+        else if (line.startsWith('-') && !line.startsWith('---')) countRem++;
+      }
+      if (countAdd > 0 || countRem > 0) {
+        added = countAdd;
+        removed = countRem;
+      }
+    }
+
+    // Fallback 3: Guarantee visible diff badge on edits/writes
+    if (added === 0 && removed === 0) {
+      if (title.includes('write') || title.includes('create')) {
+        added = 1;
+      } else {
+        added = 1;
+        removed = 1;
+      }
+    }
 
     let deltaStr = '';
     if (added > 0 && removed > 0) {

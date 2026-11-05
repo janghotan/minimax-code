@@ -17,7 +17,7 @@ import { fitFirstStatusCandidate, fitLine, normalizeWidth } from './frame.js';
 import { formatTuiAgentStatusLine, type TuiAgentStatus } from './status-protocol.js';
 import { TUI_STATUS_LINE_DEFAULT_ITEMS, type TuiStatusLineItem } from './status-line-items.js';
 import { renderCustomStatusLines } from './custom-status-text.js';
-import { getGlobalCostTracker } from './lean-cost-tracker.js';
+import { getGlobalCostTracker, resolveModelContextLimit } from './lean-cost-tracker.js';
 
 export { type TuiRuntimeStatus, type TuiShellState } from './contracts.js';
 export { TuiWelcome } from './welcome/component.js';
@@ -449,9 +449,9 @@ function contextWindowTokens(state: TuiShellState): number {
       ? usageWindow
       : state.contextWindowTokens;
   if (typeof contextWindow === 'number' && Number.isFinite(contextWindow) && contextWindow > 0) {
-    return contextWindow;
+    return resolveModelContextLimit(state.model, contextWindow);
   }
-  return 64_000;
+  return resolveModelContextLimit(state.model);
 }
 
 function renderContextWindow(state: TuiShellState, compact = false): string {

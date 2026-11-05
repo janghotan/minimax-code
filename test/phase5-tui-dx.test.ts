@@ -14,6 +14,7 @@ import {
 import {
   LeanCostTracker,
   loadPricingTable,
+  resolveModelContextLimit,
 } from '../packages/tui/src/tui/shell/lean-cost-tracker.js';
 import { getLeanAgentSettings, updateLeanAgentSettings, resetLeanAgentSettings } from '@mavis/config';
 import { TUI_COMMAND_DESCRIPTORS } from '../packages/tui/src/application/command-descriptors.js';
@@ -75,6 +76,24 @@ test('ultra-compact tool lines: formats edit, bash, read, and grep with emojis a
   // Additions green (\x1b[32m), deletions red (\x1b[31m)
   expect(editLine).toContain('\x1b[32m(+23)');
   expect(editLine).toContain('\x1b[31m(-2)');
+
+  // 1b. Edit tool with old_hunk/new_hunk and no structuredPreview
+  const rawEditCell: TranscriptCell = {
+    id: 'cell-1b',
+    kind: 'tool',
+    title: 'edit_file',
+    content: JSON.stringify({
+      path: 'src/config.ts',
+      old_hunk: 'const a = 1;\nconst b = 2;\nconst c = 3;',
+      new_hunk: 'const a = 10;\nconst b = 20;',
+    }),
+    status: 'succeeded',
+  };
+  const rawEditLine = formatUltraCompactToolLine(rawEditCell);
+  expect(rawEditLine).toContain('✏️');
+  expect(rawEditLine).toContain('src/config.ts');
+  expect(rawEditLine).toContain('\x1b[32m(+2)');
+  expect(rawEditLine).toContain('\x1b[31m(-3)');
 
   // 2. Bash tool succeeded vs failed
   const bashSuccessCell: TranscriptCell = {
@@ -272,7 +291,7 @@ test('cost tracker: custom provider prefixes (e.g. custom_provider:gem/gemini-3-
 
   const statusLine = tracker.formatPersistentStatusLine(1_000_000, 'custom_provider:gem/gemini-3-flash');
   expect(statusLine).toContain('💰 ¥');
-  expect(statusLine).toContain('🧠 110k/1000k (11%)');
+  expect(statusLine).toContain('🧠 110k/1.0M (10%)');
 });
 
 test('cost tracker: usage-missing fallback estimates from chars/4 and marks with ~', () => {
@@ -291,7 +310,7 @@ test('cost tracker: usage-missing fallback estimates from chars/4 and marks with
   const statusLine = tracker.formatPersistentStatusLine(65536);
   // Must mark estimated number with ~
   expect(statusLine).toContain('~');
-  expect(statusLine).toContain('🧠 ~1.2k/66k'); // 1000 prompt + 200 completion = 1200
+  expect(statusLine).toContain('🧠 ~1.2k/131k (1%)'); // 1000 prompt + 200 completion = 1200
   expect(statusLine).toContain('💰 ~¥');
 });
 
@@ -326,4 +345,67 @@ test('slash commands: diff, test, undo, cost are properly declared in descriptor
   expect(commandNames).toContain('undo');
   expect(commandNames).toContain('cost');
   expect(commandNames).toContain('compact');
+});
+
+test('pricing and context limits for gemini-3.8-flash-high, claude-3-7-sonnet, and deepseek', () => {
+  const table = loadPricingTable();
+  expect(table.models['gemini-3.8-flash-high']).toBeDefined();
+  expect(table.models['claude-3-7-sonnet']).toBeDefined();
+  expect(table.models['o1']).toBeDefined();
+
+  // Context limits
+  expect(resolveModelContextLimit('gemini-3.8-flash-high')).toBe(1_048_576); // 1M
+  expect(resolveModelContextLimit('gemini-3-pro')).toBe(2_097_152); // 2M
+  expect(resolveModelContextLimit('claude-3-7-sonnet')).toBe(200_000); // 200k
+  expect(resolveModelContextLimit('deepseek-v3')).toBe(131_072); // 128k
+  expect(resolveModelContextLimit('unknown-model')).toBe(131_072); // 128k floor
+
+  // Cost calculation for gemini-3.8-flash-high
+  const tracker = new LeanCostTracker();
+  tracker.recordUsage({
+    model: 'gemini-3.8-flash-high',
+    promptTokens: 50_000,
+    promptCacheHitTokens: 10_000,
+    promptCacheMissTokens: 40_000,
+    completionTokens: 2_000,
+  });
+  const cost = tracker.calculateCost('gemini-3.8-flash-high');
+  expect(cost.hasPrice).toBe(true);
+  expect(cost.totalCny).toBeGreaterThan(0);
+  const status = tracker.formatPersistentStatusLine(undefined, 'gemini-3.8-flash-high');
+  expect(status).toContain('🧠 52k/1.0M (5%)');
+  expect(status).toContain('💰 ¥');
+});
+
+test('ultra-compact tool lines: formats write_file and diffs in cell.detail with green and red badges', () => {
+  // write_file test
+  const writeCell: TranscriptCell = {
+    id: 'cell-w1',
+    kind: 'tool',
+    title: 'write_file',
+    content: JSON.stringify({
+      path: 'src/main.ts',
+      content: 'line 1\nline 2\nline 3\nline 4\nline 5',
+    }),
+    status: 'succeeded',
+  };
+  const writeLine = formatUltraCompactToolLine(writeCell);
+  expect(writeLine).toContain('✏️');
+  expect(writeLine).toContain('src/main.ts');
+  expect(writeLine).toContain('\x1b[32m(+5)');
+
+  // detail diff test
+  const diffCell: TranscriptCell = {
+    id: 'cell-d1',
+    kind: 'tool',
+    title: 'patch',
+    content: JSON.stringify({ path: 'src/server.ts' }),
+    detail: '@@ -1,3 +1,4 @@\n-const a = 1;\n+const a = 2;\n+const b = 3;\n',
+    status: 'succeeded',
+  };
+  const diffLine = formatUltraCompactToolLine(diffCell);
+  expect(diffLine).toContain('✏️');
+  expect(diffLine).toContain('src/server.ts');
+  expect(diffLine).toContain('\x1b[32m(+2)');
+  expect(diffLine).toContain('\x1b[31m(-1)');
 });

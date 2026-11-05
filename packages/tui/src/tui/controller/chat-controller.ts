@@ -812,14 +812,19 @@ export class TuiChatController {
         this.durableMessageAnchor = event.message.id;
       if (event.type === 'message' && event.message.role === 'assistant') {
         const usage = event.message.usage;
-        const currentModel = this.state.account?.model ?? this.state.account?.selectedModel;
-        const currentWindow = this.state.contextSnapshot?.model?.contextWindow ?? 64_000;
+        const currentModel =
+          this.state.account?.modelId ??
+          this.state.account?.defaultModel ??
+          (this.state.account?.providerId && this.state.account?.modelId
+            ? `${this.state.account.providerId}/${this.state.account.modelId}`
+            : undefined);
+        const currentWindow = this.state.contextSnapshot?.model?.contextWindow ?? 131_072;
         const promptTokens = usage?.inputTokens;
         const completionTokens =
           usage?.outputTokens ??
           (promptTokens === undefined
             ? Math.max(
-                1,
+                15,
                 Math.round(
                   ((event.message.content?.length ?? 0) + (event.message.thinking?.length ?? 0)) / 4,
                 ),
@@ -830,12 +835,19 @@ export class TuiChatController {
           promptTokens !== undefined ? Math.max(0, promptTokens - cacheHitTokens) : undefined;
         const isEstimated = usage?.inputTokens === undefined && usage?.outputTokens === undefined;
 
+        // Estimate input chars if promptTokens is missing
+        const rawChars =
+          (event.message.content?.length ?? 0) +
+          (event.message.thinking?.length ?? 0) +
+          3200;
+
         getGlobalCostTracker().recordUsage({
           model: currentModel,
           promptTokens,
           completionTokens,
           promptCacheHitTokens: cacheHitTokens,
           promptCacheMissTokens: cacheMissTokens,
+          rawChars,
           isEstimated,
           contextWindow: currentWindow,
         });

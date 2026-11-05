@@ -93,14 +93,19 @@ export interface CostCalculationResult {
   currency: 'CNY';
 }
 
-function formatTokenK(tokens: number): string {
+export function formatTokenK(tokens: number): string {
   if (tokens < 1000) return `${tokens}`;
   if (tokens < 10_000) return `${(tokens / 1000).toFixed(1)}k`;
-  return `${Math.round(tokens / 1000)}k`;
+  if (tokens < 1_000_000) return `${Math.round(tokens / 1000)}k`;
+  const m = tokens / 1_000_000;
+  return m % 1 === 0 ? `${m}M` : `${m.toFixed(1)}M`;
 }
 
 export function cleanModelName(raw: string): string {
   let name = raw.trim();
+  if (name.includes('#')) {
+    name = name.split('#')[0];
+  }
   if (name.includes(':')) {
     const parts = name.split(':');
     name = parts[parts.length - 1];
@@ -109,10 +114,48 @@ export function cleanModelName(raw: string): string {
     const parts = name.split('/');
     name = parts[parts.length - 1];
   }
-  if (name.includes('#')) {
-    name = name.split('#')[0];
-  }
   return name.toLowerCase().trim();
+}
+
+/**
+ * Resolves model-appropriate context window ceiling:
+ * - Gemini: 1,048,576 (1M) or 2,097,152 (2M)
+ * - Claude: 200,000 (200k)
+ * - DeepSeek / GPT-4o / MiniMax: 131,072 (128k)
+ * - Default floor: 131,072 (128k)
+ */
+export function resolveModelContextLimit(modelId?: string, explicitLimit?: number): number {
+  const clean = modelId ? cleanModelName(modelId) : '';
+  let modelDefault = 131_072;
+  if (clean.includes('gemini')) {
+    if (
+      clean.includes('1.5-pro') ||
+      clean.includes('2.5-pro') ||
+      clean.includes('2.0-pro') ||
+      clean.includes('3-pro') ||
+      clean.includes('3.8-pro')
+    ) {
+      modelDefault = 2_097_152;
+    } else {
+      modelDefault = 1_048_576;
+    }
+  } else if (clean.includes('claude')) {
+    modelDefault = 200_000;
+  } else if (
+    clean.includes('deepseek') ||
+    clean.includes('gpt-4') ||
+    clean.includes('o1') ||
+    clean.includes('o3') ||
+    clean.includes('minimax') ||
+    clean.includes('abab')
+  ) {
+    modelDefault = 131_072;
+  }
+
+  if (typeof explicitLimit === 'number' && Number.isFinite(explicitLimit) && explicitLimit > 0) {
+    return Math.max(explicitLimit, modelDefault);
+  }
+  return modelDefault;
 }
 
 function findPricingEntry(
@@ -134,6 +177,41 @@ function findPricingEntry(
       return { entry: table.models[k], matchedKey: k };
     }
   }
+  // Family-based fallback
+  if (clean.includes('gemini')) {
+    if (clean.includes('pro')) {
+      return { entry: table.models['gemini-3-pro'] ?? table.models['gemini-1.5-pro'], matchedKey: 'gemini-pro' };
+    }
+    return {
+      entry:
+        table.models['gemini-3.8-flash-high'] ??
+        table.models['gemini-3-flash'] ??
+        table.models['gemini-2.5-flash'],
+      matchedKey: 'gemini-flash',
+    };
+  }
+  if (clean.includes('claude')) {
+    if (clean.includes('haiku')) return { entry: table.models['claude-3-5-haiku'], matchedKey: 'claude-haiku' };
+    if (clean.includes('opus')) return { entry: table.models['claude-3-opus'], matchedKey: 'claude-opus' };
+    return {
+      entry: table.models['claude-3-7-sonnet'] ?? table.models['claude-3-5-sonnet'],
+      matchedKey: 'claude-sonnet',
+    };
+  }
+  if (clean.includes('deepseek')) {
+    if (clean.includes('r1') || clean.includes('reasoner')) {
+      return { entry: table.models['deepseek-r1'], matchedKey: 'deepseek-r1' };
+    }
+    return { entry: table.models['deepseek-v3'] ?? table.models['deepseek-chat'], matchedKey: 'deepseek-v3' };
+  }
+  if (clean.includes('gpt-4o-mini')) return { entry: table.models['gpt-4o-mini'], matchedKey: 'gpt-4o-mini' };
+  if (clean.includes('gpt-4o') || clean.includes('gpt-4')) return { entry: table.models['gpt-4o'], matchedKey: 'gpt-4o' };
+  if (clean.includes('o1')) return { entry: table.models['o1'], matchedKey: 'o1' };
+  if (clean.includes('o3')) return { entry: table.models['o3-mini'], matchedKey: 'o3-mini' };
+  if (clean.includes('minimax') || clean.includes('abab')) {
+    return { entry: table.models['minimax-text-01'], matchedKey: 'minimax-text-01' };
+  }
+
   return {};
 }
 
@@ -144,11 +222,14 @@ export class LeanCostTracker {
   turnCount = 0;
   isEstimated = false;
   lastUsedTokens = 0;
-  lastWindowLimit = 65536;
+  lastWindowLimit = 131_072;
   model = 'deepseek-chat';
 
   setModel(model: string): void {
-    if (model) this.model = model;
+    if (model) {
+      this.model = model;
+      this.lastWindowLimit = resolveModelContextLimit(model, this.lastWindowLimit);
+    }
   }
 
   syncUsedTokens(used: number, limit?: number): void {
@@ -156,7 +237,7 @@ export class LeanCostTracker {
       this.lastUsedTokens = used;
     }
     if (limit && limit > 0) {
-      this.lastWindowLimit = limit;
+      this.lastWindowLimit = resolveModelContextLimit(this.model, limit);
     }
   }
 
@@ -167,7 +248,7 @@ export class LeanCostTracker {
     turns?: number;
     model?: string;
   }): void {
-    if (usage.model) this.model = usage.model;
+    if (usage.model) this.setModel(usage.model);
     if (typeof usage.turns === 'number' && usage.turns > this.turnCount) {
       this.turnCount = usage.turns;
     }
@@ -189,13 +270,13 @@ export class LeanCostTracker {
       this.turnCount++;
     }
     if (options.model) {
-      this.model = options.model;
+      this.setModel(options.model);
     }
     if (options.contextWindow && options.contextWindow > 0) {
-      this.lastWindowLimit = options.contextWindow;
+      this.lastWindowLimit = resolveModelContextLimit(this.model, options.contextWindow);
     }
 
-    if (options.promptTokens !== undefined && Number.isFinite(options.promptTokens)) {
+    if (options.promptTokens !== undefined && Number.isFinite(options.promptTokens) && options.promptTokens > 0) {
       this.isEstimated = false;
       const hit = options.promptCacheHitTokens ?? 0;
       const miss = options.promptCacheMissTokens ?? Math.max(0, options.promptTokens - hit);
@@ -206,11 +287,11 @@ export class LeanCostTracker {
       this.completionTokens += completion;
       this.lastUsedTokens = options.promptTokens + completion;
     } else {
-      // Fallback: estimate from rawChars / 4
+      // Fallback: estimate from rawChars / 4 with realistic conversational baseline
       this.isEstimated = true;
-      const rawChars = options.rawChars ?? 0;
-      const estPrompt = Math.max(1, Math.round(rawChars / 4));
-      const estCompletion = options.completionTokens ?? 0;
+      const rawChars = options.rawChars && options.rawChars > 0 ? options.rawChars : 3200;
+      const estPrompt = Math.max(800, Math.round(rawChars / 4));
+      const estCompletion = Math.max(15, options.completionTokens ?? 0);
 
       this.promptCacheHitTokens += 0;
       this.promptCacheMissTokens += estPrompt;
@@ -286,7 +367,7 @@ export class LeanCostTracker {
 
   formatPersistentStatusLine(contextLimit?: number, modelId?: string): string {
     const targetModel = modelId || this.model;
-    const limit = contextLimit ?? this.lastWindowLimit;
+    const limit = resolveModelContextLimit(targetModel, contextLimit ?? this.lastWindowLimit);
     const used = this.lastUsedTokens;
     const percent = Math.min(100, Math.round((used / limit) * 100));
 

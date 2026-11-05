@@ -139,7 +139,7 @@ export const DEFAULT_LEAN_AGENT_SETTINGS: Readonly<LeanAgentSettings> = {
     defaultModel: 'deepseek-chat',
   },
   tui: {
-    projectName: 'yourname',
+    projectName: 'Minimax-coder',
     usdToCnyRate: 7.25,
     diffContextLines: 2,
   },
