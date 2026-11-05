@@ -5,7 +5,7 @@ export const DEFAULT_CONTEXT_MANAGER_SETTINGS = {
   reserveTokens: 16_384,
   keepRecentTokens: 20_000,
   minMessagesToCompact: 4,
-  contextWindowFallback: 128_000,
+  contextWindowFallback: 64 * 1024,
   safetyMarginTokens: 2_048,
   strategyVersion: 'agent-modules-context-manager-v1',
 } satisfies ContextManagerSettings;

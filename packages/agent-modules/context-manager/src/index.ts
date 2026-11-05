@@ -1,3 +1,16 @@
+export {
+  maskObservationsBatch,
+  extractToolResultReceipt,
+  type MaskingResult,
+  type ObservationMaskingOptions,
+} from './observation-masking.js';
+export {
+  compactWithSafetyBound,
+  buildCompactionNote,
+  extractVerbatimTouchedFiles,
+  extractVerbatimErrors,
+  type StructuredCompactionNote,
+} from './compaction-note.js';
 export { ContextManager } from './manager.js';
 export { computeCompactionTriggerAt, DEFAULT_CONTEXT_MANAGER_SETTINGS } from './settings.js';
 export {
@@ -23,6 +36,7 @@ export {
   type CountTokensTool,
 } from './count-tokens-body.js';
 export {
+  DEFAULT_CONTEXT_WINDOW_FLOOR,
   estimatePreparedContextUsage,
   readContextWindowTokens,
   type PreparedContextUsageEstimate,

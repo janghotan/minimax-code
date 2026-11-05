@@ -43,12 +43,26 @@ export interface LeanEditConfig {
   readonly editFormat: 'udiff' | 'diff' | 'whole';
 }
 
+export interface LeanContextManagementConfig {
+  /** Floor for context window in tokens if unknown or <= 0 (default: 64 * 1024) */
+  readonly contextWindowFloor: number;
+  /** Keep tool results for the last K rounds (default: 5) */
+  readonly keepRecentToolRounds: number;
+  /** Batch masking trigger threshold as ratio of context window (default: 0.40) */
+  readonly batchMaskThreshold: number;
+  /** Compaction safety bound threshold as ratio of context window (default: 0.60) */
+  readonly compactionThreshold: number;
+  /** Keep the last N turns raw during compaction (default: 2) */
+  readonly keepRawTurns: number;
+}
+
 export interface LeanAgentSettings {
   readonly toolOutput: LeanToolOutputConfig;
   readonly testRunner: LeanTestRunnerConfig;
   readonly readFile: LeanReadFileConfig;
   readonly search: LeanSearchConfig;
   readonly edit: LeanEditConfig;
+  readonly contextManagement: LeanContextManagementConfig;
 }
 
 export const DEFAULT_LEAN_AGENT_SETTINGS: Readonly<LeanAgentSettings> = {
@@ -74,6 +88,13 @@ export const DEFAULT_LEAN_AGENT_SETTINGS: Readonly<LeanAgentSettings> = {
     fuzzyMatchFallback: true,
     editFormat: 'udiff',
   },
+  contextManagement: {
+    contextWindowFloor: 64 * 1024,
+    keepRecentToolRounds: 5,
+    batchMaskThreshold: 0.40,
+    compactionThreshold: 0.60,
+    keepRawTurns: 2,
+  },
 };
 
 let currentLeanSettings: LeanAgentSettings = { ...DEFAULT_LEAN_AGENT_SETTINGS };
@@ -89,6 +110,10 @@ export function updateLeanAgentSettings(overrides: Partial<LeanAgentSettings>): 
     readFile: { ...currentLeanSettings.readFile, ...(overrides.readFile ?? {}) },
     search: { ...currentLeanSettings.search, ...(overrides.search ?? {}) },
     edit: { ...currentLeanSettings.edit, ...(overrides.edit ?? {}) },
+    contextManagement: {
+      ...currentLeanSettings.contextManagement,
+      ...(overrides.contextManagement ?? {}),
+    },
   };
 }
 
