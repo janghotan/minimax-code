@@ -37,7 +37,7 @@ import { createDesktopOutputContinuation } from './output-limit.js';
 import { withDesktopCompletenessReport } from './ptc-result-projection.js';
 import type { LocalRuntimeToolContext } from './types.js';
 
-const DEFAULT_GLOB_LIMIT = 200;
+const DEFAULT_GLOB_LIMIT = 100;
 
 function isExactFilePattern(pattern: string): boolean {
   const normalized = pattern.replaceAll('\\', '/');
@@ -241,6 +241,11 @@ export class LocalGlobTool implements ToolImpl<
         : offset > 0
           ? `No more files matched at offset ${offset}`
           : 'No files matched';
+
+    if (truncated && lines.length > 0) {
+      const omitted = Math.max(0, allLines.length - (offset + lines.length));
+      text += `\n[${lines.length} files shown.${omitted > 0 ? ` ${omitted} more files omitted, narrow the glob pattern or specify a path.` : ' More omitted, narrow the pattern.'}]`;
+    }
 
     const details: Record<string, unknown> = { matched: lines.length, limit, offset };
     if (truncated) {

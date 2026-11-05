@@ -5,6 +5,7 @@
       "test/windows-contract.test.mjs"
     ],
     "capability": [
+      "test/phase1-tool-diet.test.ts",
       "packages/local-runtime-v2/test/integration/compaction-openai-transport.integration.test.ts",
       "packages/local-runtime/test/unit/seed-builtin-shared-dir.test.ts",
       "packages/local-runtime/test/unit/skill-directory-symlinks.test.ts",

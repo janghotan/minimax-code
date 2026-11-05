@@ -269,3 +269,17 @@ export type {
   ResolveProviderAuthModeInput,
   ResolvedProviderAuthMode,
 } from './provider-auth-mode.js';
+export {
+  DEFAULT_LEAN_AGENT_SETTINGS,
+  getLeanAgentSettings,
+  updateLeanAgentSettings,
+  resetLeanAgentSettings,
+} from './lean-agent-config.js';
+export type {
+  LeanAgentSettings,
+  LeanToolOutputConfig,
+  LeanTestRunnerConfig,
+  LeanReadFileConfig,
+  LeanSearchConfig,
+  LeanEditConfig,
+} from './lean-agent-config.js';

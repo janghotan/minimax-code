@@ -324,7 +324,7 @@ export class LocalGrepTool implements ToolImpl<
       matchLineIndexes.filter((lineIndex) => lineIndex < lineCount).length;
     const parserWarnings: string[] = [];
     if (typeof details.matchLimitReached === 'number') {
-      parserWarnings.push(`${details.matchLimitReached} matches limit reached`);
+      parserWarnings.push(`${details.matchLimitReached} matches limit reached; additional matches omitted, narrow the pattern`);
     }
     if (details.linesTruncated === true) {
       parserWarnings.push('some lines were truncated to 2000 chars; use read for full lines');

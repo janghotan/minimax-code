@@ -1,8 +1,8 @@
 import type { ToolResult, ToolResultContent } from '@mavis/agent-core/tools';
 
-export const DESKTOP_GREP_CONTENT_MAX_BYTES = 16 * 1024;
-export const DESKTOP_READ_TEXT_MAX_BYTES = 24 * 1024;
-export const DESKTOP_BASH_MAX_BYTES = 24 * 1024;
+export const DESKTOP_GREP_CONTENT_MAX_BYTES = 8 * 1024;
+export const DESKTOP_READ_TEXT_MAX_BYTES = 8 * 1024;
+export const DESKTOP_BASH_MAX_BYTES = 8 * 1024;
 // Leave room for exit/timing receipts and the readable output reference.
 export const DESKTOP_BASH_PREVIEW_BYTES = DESKTOP_BASH_MAX_BYTES - 2048;
 
