@@ -184,6 +184,7 @@ export function compactWithSafetyBound(
   const noteMessage: AgentMessage = {
     role: 'user',
     content: `[Context Compaction Summary]\n${compactedNote}`,
+    timestamp: Date.now(),
   };
 
   return {

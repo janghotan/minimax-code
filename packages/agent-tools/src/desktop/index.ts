@@ -213,3 +213,14 @@ export {
   DESKTOP_BASH_PREVIEW_BYTES,
   PTC_CHILD_FULL_OUTPUT_MAX_BYTES,
 } from './output-limit.js';
+export {
+  recordEditCheckpoint,
+  undoLastEdit,
+  getEditCheckpointCount,
+  clearEditCheckpoints,
+  type EditCheckpoint,
+} from './edit-checkpoint.js';
+export {
+  formatCompactUnifiedDiff,
+  formatGitCompactDiff,
+} from './compact-diff.js';

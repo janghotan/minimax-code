@@ -45,7 +45,7 @@ export class TuiDailyCheckinApplication {
     if (getLeanAgentSettings().declutter.disableDailyCheckin) {
       return {
         status: 'unavailable',
-        panel: { canSignin: false, isSignin: false, signinList: [] },
+        panel: { scene: {} as any, days: [] },
       };
     }
     const panel = validateSigninPanel(await this.gateway.getSigninPanel());

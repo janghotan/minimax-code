@@ -1,4 +1,10 @@
 import { parsePluginMentions } from '@mavis/shared/plugin-mention';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { formatGitCompactDiff } from '../../shell/compact-diff.js';
+import { undoLastEdit } from '../../shell/edit-checkpoint.js';
+import { getGlobalCostTracker } from '../../shell/lean-cost-tracker.js';
+import { applyTestBackpressure, detectAndAugmentTestCommand } from '@mavis/agent-tools/desktop';
 import {
   createTuiCommandCatalog,
   matchTuiCommandInput,
@@ -1286,10 +1292,88 @@ export class TuiCommandFlow {
         await this.options.controller.archiveCurrentSession();
         await this.options.sessionFlow.archiveCurrentProjection(sessionId);
       },
-      compact: async ({ args }) =>
-        this.runLoginProtectedAction(() =>
-          this.options.featureFlow.compactSession(args, this.hasLiveRun()),
-        ),
+      compact: async ({ args }) => {
+        await this.options.featureFlow.compactSession(args, this.hasLiveRun());
+      },
+      diff: async () => {
+        try {
+          const exec = promisify(execFile);
+          const statusResult = await exec('git', ['status', '--short'], {
+            cwd: this.options.workspaceDir,
+          });
+          const diffResult = await exec('git', ['diff', '-U2'], {
+            cwd: this.options.workspaceDir,
+          });
+          const status = statusResult.stdout.trim();
+          const diff = formatGitCompactDiff(diffResult.stdout);
+          if (!status && !diff) {
+            this.options.append('Working tree clean; no uncommitted changes.');
+            return;
+          }
+          const output = [
+            status ? `📁 Status:\n${status}` : '',
+            diff ? `📝 Compact Diff (-U2):\n${diff}` : '',
+          ]
+            .filter(Boolean)
+            .join('\n\n');
+          this.options.append(output);
+        } catch (err) {
+          this.options.append(
+            `Git diff failed: ${err instanceof Error ? err.message : String(err)}`,
+            'error',
+          );
+        }
+      },
+      test: async ({ args }) => {
+        try {
+          const exec = promisify(execFile);
+          const command = args.trim() || 'npm test';
+          const detection = detectAndAugmentTestCommand(command);
+          const cmdToRun = detection.augmentedCommand || command;
+          this.options.append(`Running tests: ${cmdToRun}...`);
+          let stdout = '';
+          let stderr = '';
+          let exitCode = 0;
+          try {
+            const res = await exec('sh', ['-c', cmdToRun], {
+              cwd: this.options.workspaceDir,
+              maxBuffer: 10 * 1024 * 1024,
+            });
+            stdout = res.stdout;
+            stderr = res.stderr;
+          } catch (execErr: unknown) {
+            const errObj = execErr as { stdout?: string; stderr?: string; code?: number };
+            stdout = errObj.stdout ?? '';
+            stderr = errObj.stderr ?? '';
+            exitCode = typeof errObj.code === 'number' ? errObj.code : 1;
+          }
+          const fullOutput = [stdout, stderr].filter(Boolean).join('\n');
+          const runnerName = detection.runnerName || 'test';
+          const backpressure = applyTestBackpressure(
+            fullOutput,
+            exitCode,
+            runnerName,
+            this.options.workspaceDir,
+          );
+          const message =
+            backpressure.formattedText ||
+            (exitCode === 0 ? '✓ Tests passed' : `❌ Tests failed (exit code ${exitCode})`);
+          this.options.append(message, exitCode === 0 ? undefined : 'error');
+        } catch (err) {
+          this.options.append(
+            `Test runner failed: ${err instanceof Error ? err.message : String(err)}`,
+            'error',
+          );
+        }
+      },
+      undo: async () => {
+        const result = await undoLastEdit(this.options.workspaceDir);
+        this.options.append(result.message, result.success ? undefined : 'warning');
+      },
+      cost: async () => {
+        const summary = getGlobalCostTracker().formatCostBreakdown();
+        this.options.append(summary);
+      },
       status: () => this.options.featureFlow.showAccountStatus(),
       tasks: async () => {
         if (!this.options.showTasks) {

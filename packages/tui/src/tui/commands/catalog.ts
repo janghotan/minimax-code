@@ -287,6 +287,27 @@ const COMMAND_SOURCES: readonly TuiCommandSource[] = [
     unavailableReason: 'Start or resume a Session before compacting it.',
   },
   {
+    ...TUI_COMMAND_DESCRIPTORS.diff,
+    category: 'Session',
+    discoverability: 'primary',
+  },
+  {
+    ...TUI_COMMAND_DESCRIPTORS.test,
+    category: 'Session',
+    argumentHint: '[command]',
+    discoverability: 'primary',
+  },
+  {
+    ...TUI_COMMAND_DESCRIPTORS.undo,
+    category: 'Session',
+    discoverability: 'primary',
+  },
+  {
+    ...TUI_COMMAND_DESCRIPTORS.cost,
+    category: 'Session',
+    discoverability: 'primary',
+  },
+  {
     ...TUI_COMMAND_DESCRIPTORS.status,
     category: 'Runtime',
     readiness: 'controller',

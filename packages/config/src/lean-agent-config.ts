@@ -76,6 +76,15 @@ export interface LeanProviderConfig {
   readonly defaultModel: string;
 }
 
+export interface LeanTuiConfig {
+  /** Project name displayed in header (default: 'yourname') */
+  readonly projectName: string;
+  /** USD to CNY exchange rate fallback when model pricing is only available in USD (default: 7.25) */
+  readonly usdToCnyRate: number;
+  /** Context lines for compact unified diffs (default: 2) */
+  readonly diffContextLines: number;
+}
+
 export interface LeanAgentSettings {
   readonly toolOutput: LeanToolOutputConfig;
   readonly testRunner: LeanTestRunnerConfig;
@@ -85,6 +94,7 @@ export interface LeanAgentSettings {
   readonly contextManagement: LeanContextManagementConfig;
   readonly declutter: LeanDeclutterConfig;
   readonly provider: LeanProviderConfig;
+  readonly tui: LeanTuiConfig;
 }
 
 export const DEFAULT_LEAN_AGENT_SETTINGS: Readonly<LeanAgentSettings> = {
@@ -128,6 +138,11 @@ export const DEFAULT_LEAN_AGENT_SETTINGS: Readonly<LeanAgentSettings> = {
     defaultApiFormat: 'openai-completions',
     defaultModel: 'deepseek-chat',
   },
+  tui: {
+    projectName: 'yourname',
+    usdToCnyRate: 7.25,
+    diffContextLines: 2,
+  },
 };
 
 let currentLeanSettings: LeanAgentSettings = { ...DEFAULT_LEAN_AGENT_SETTINGS };
@@ -154,6 +169,10 @@ export function updateLeanAgentSettings(overrides: Partial<LeanAgentSettings>): 
     provider: {
       ...currentLeanSettings.provider,
       ...(overrides.provider ?? {}),
+    },
+    tui: {
+      ...currentLeanSettings.tui,
+      ...(overrides.tui ?? {}),
     },
   };
 }

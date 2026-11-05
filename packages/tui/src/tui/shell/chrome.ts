@@ -17,6 +17,7 @@ import { fitFirstStatusCandidate, fitLine, normalizeWidth } from './frame.js';
 import { formatTuiAgentStatusLine, type TuiAgentStatus } from './status-protocol.js';
 import { TUI_STATUS_LINE_DEFAULT_ITEMS, type TuiStatusLineItem } from './status-line-items.js';
 import { renderCustomStatusLines } from './custom-status-text.js';
+import { getGlobalCostTracker } from './lean-cost-tracker.js';
 
 export { type TuiRuntimeStatus, type TuiShellState } from './contracts.js';
 export { TuiWelcome } from './welcome/component.js';
@@ -271,6 +272,12 @@ function buildStatusSegment(
         ],
         { shrinkPriority: 50, dropPriority: 80 },
       );
+    case 'lean-metrics': {
+      const tracker = getGlobalCostTracker();
+      const windowLimit = contextWindowTokens(state);
+      const line = tracker.formatPersistentStatusLine(windowLimit);
+      return createStatusSegment([line], { shrinkPriority: 80, preserveWhenNarrow: true });
+    }
     case 'custom-command':
       return createStatusSegment(
         [

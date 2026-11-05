@@ -110,6 +110,7 @@ import { getLeanAgentSettings } from '@mavis/config';
 import { spillToolOutput } from './artifact-spill.js';
 import { detectAndAugmentTestCommand, applyTestBackpressure } from './test-backpressure.js';
 import { applyFuzzyHunkEdit } from './fuzzy-edit.js';
+import { recordEditCheckpoint } from './edit-checkpoint.js';
 
 export function getLocalBashEnvironment(): {
   readonly platform: NodeJS.Platform;
@@ -301,7 +302,7 @@ export class LocalReadTool implements ToolImpl<
     const limited = limitDesktopReadTextResult(result, input.offset);
     const spilled = spillToolOutput(limited.text, this.workspaceRoot, { toolName: 'read' });
     const finalResult = spilled.isSpilled
-      ? { ...limited, text: spilled.text, content: [{ type: 'text', text: spilled.text }] }
+      ? { ...limited, text: spilled.text, content: [{ type: 'text' as const, text: spilled.text }] }
       : limited;
     return withReadProgrammaticResult(finalResult, effectiveLimit);
   }
@@ -647,6 +648,9 @@ export class LocalEditTool implements ToolImpl<
         replaceAll: input.replace_all === true,
       };
       if (!editCapture) return withDesktopCompletenessReport(LocalEditToolDef.name, result, { data });
+      if (editCapture.originalFile !== undefined) {
+        recordEditCheckpoint(input.file_path, editCapture.originalFile);
+      }
       const normalized =
         result.details?.line_number_prefixes_stripped === true
           ? normalizeEditsForLineNumberRetry([
@@ -675,6 +679,7 @@ export class LocalEditTool implements ToolImpl<
           input.file_path,
         );
         if (fuzzy.matched && fuzzy.newContent !== undefined) {
+          recordEditCheckpoint(input.file_path, originalFile);
           await writeFile(absolutePath, fuzzy.newContent, 'utf8');
           const successText = `Applied fuzzy edit to ${input.file_path} (lines ${fuzzy.matchedLines?.start ?? 1}-${fuzzy.matchedLines?.end ?? 1}).`;
           return withDesktopCompletenessReport(

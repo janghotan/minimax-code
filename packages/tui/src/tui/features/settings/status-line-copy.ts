@@ -54,6 +54,7 @@ const descriptions: Record<Exclude<TuiStatusLineItem, 'build-mode'>, readonly [s
   'context-remaining': ['Remaining context window', '剩余上下文窗口'],
   'context-meter': ['Remaining context gauge', '剩余上下文刻度条'],
   'custom-command': ['Configured custom command output', '已配置的自定义命令输出'],
+  'lean-metrics': ['Tokens & Cost (CNY)', 'Token 消耗与人民币花费'],
 };
 
 function isChinese(locale?: string): boolean {

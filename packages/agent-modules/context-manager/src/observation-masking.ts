@@ -120,7 +120,7 @@ export function maskObservationsBatch(
         };
         rounds.push(currentRound);
       }
-    } else if (msg.role === 'toolResult' || msg.role === 'tool') {
+    } else if (msg.role === 'toolResult' || (msg as { role: string }).role === 'tool') {
       if (currentRound) {
         currentRound.resultIndexes.push(i);
       }
@@ -161,11 +161,11 @@ export function maskObservationsBatch(
   }
 
   let maskedCount = 0;
-  const newMessages = messages.map((msg, index) => {
+  const newMessages: AgentMessage[] = messages.map((msg, index) => {
     if (!resultIndexesToMask.has(index)) return msg;
 
     // Never mask user messages or assistant messages
-    if (msg.role !== 'toolResult' && msg.role !== 'tool') return msg;
+    if (msg.role !== 'toolResult' && (msg as { role: string }).role !== 'tool') return msg;
 
     const existingText = extractMessageText(msg);
     // If already masked with [ran ...], don't double mask
@@ -179,9 +179,9 @@ export function maskObservationsBatch(
 
     maskedCount++;
     return {
-      ...msg,
-      content: [{ type: 'text', text: receipt }],
-    };
+      ...(msg as any),
+      content: [{ type: 'text' as const, text: receipt }],
+    } as AgentMessage;
   });
 
   return {
