@@ -9,6 +9,8 @@
     "node": ">=22.19 <23 || >=24.2 <27"
   },
   "scripts": {
+    "bench": "node scripts/bench.mjs",
+    "bench:baseline": "node scripts/bench.mjs --save-baseline",
     "build": "node scripts/build.mjs",
     "release:cli": "node scripts/release-cli.mjs",
     "start": "node dist/cli.js",

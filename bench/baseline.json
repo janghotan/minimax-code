@@ -1,0 +1,82 @@
+{
+  "timestamp": "2026-11-05T12:37:21.687Z",
+  "model": "deepseek-chat",
+  "pricing": {
+    "currency": "CNY",
+    "symbol": "¥",
+    "cacheHitPer1M": 0.5,
+    "cacheMissPer1M": 2,
+    "completionPer1M": 8
+  },
+  "tasks": [
+    {
+      "id": "task1_read_large_file",
+      "name": "Read Large File (1140 lines)",
+      "promptTokens": 29424,
+      "completionTokens": 9,
+      "totalTokens": 29433,
+      "cacheHitTokens": 11204,
+      "cacheMissTokens": 18220,
+      "cacheHitRatio": 0.3807775965198477,
+      "peakContext": 18220,
+      "costCny": 0.042114
+    },
+    {
+      "id": "task2_run_failing_test",
+      "name": "Run Failing Test Suite",
+      "promptTokens": 37146,
+      "completionTokens": 11,
+      "totalTokens": 37157,
+      "cacheHitTokens": 36633,
+      "cacheMissTokens": 513,
+      "cacheHitRatio": 0.9861896301082216,
+      "peakContext": 18733,
+      "costCny": 0.0194305
+    },
+    {
+      "id": "task3_fix_code",
+      "name": "Fix Bug in Source File",
+      "promptTokens": 38002,
+      "completionTokens": 9,
+      "totalTokens": 38011,
+      "cacheHitTokens": 37659,
+      "cacheMissTokens": 343,
+      "cacheHitRatio": 0.990974159254776,
+      "peakContext": 19076,
+      "costCny": 0.0195875
+    },
+    {
+      "id": "task4_rerun_test",
+      "name": "Rerun Test Suite (Pass)",
+      "promptTokens": 38858,
+      "completionTokens": 5,
+      "totalTokens": 38863,
+      "cacheHitTokens": 38345,
+      "cacheMissTokens": 513,
+      "cacheHitRatio": 0.9867980853363528,
+      "peakContext": 19589,
+      "costCny": 0.0202385
+    },
+    {
+      "id": "task5_grep_repo",
+      "name": "Grep Pattern Across Repo",
+      "promptTokens": 39639,
+      "completionTokens": 8,
+      "totalTokens": 39647,
+      "cacheHitTokens": 39364,
+      "cacheMissTokens": 275,
+      "cacheHitRatio": 0.9930623880521708,
+      "peakContext": 19864,
+      "costCny": 0.020296
+    }
+  ],
+  "totals": {
+    "promptTokens": 183069,
+    "completionTokens": 42,
+    "totalTokens": 183111,
+    "cacheHitTokens": 163205,
+    "peakContext": 19864,
+    "costCny": 0.12166650000000001,
+    "cacheHitRatio": 0.8914944638360399
+  }
+}

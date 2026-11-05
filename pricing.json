@@ -1,0 +1,22 @@
+{
+  "_comment": "Model pricing in Chinese Yuan (CNY / ¥) per 1,000,000 tokens",
+  "_source": "https://api-docs.deepseek.com/quick_start/pricing",
+  "_date": "2024-12-26",
+  "models": {
+    "deepseek-chat": {
+      "prompt_cache_hit_cny_per_1m": 0.5,
+      "prompt_cache_miss_cny_per_1m": 2.0,
+      "completion_cny_per_1m": 8.0,
+      "source": "https://api-docs.deepseek.com/quick_start/pricing",
+      "date": "2024-12-26"
+    },
+    "deepseek-reasoner": {
+      "prompt_cache_hit_cny_per_1m": 1.0,
+      "prompt_cache_miss_cny_per_1m": 4.0,
+      "completion_cny_per_1m": 16.0,
+      "source": "https://api-docs.deepseek.com/quick_start/pricing",
+      "date": "2024-12-26"
+    }
+  },
+  "usd_to_cny": 7.25
+}
