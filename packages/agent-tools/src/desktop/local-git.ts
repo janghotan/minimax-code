@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import type { ToolImpl, ToolResult } from '@mavis/agent-core/tools';
-import { LeanGitTool, type LeanGitSchema } from './lean-tool-schemas.js';
+import { bindTool, type ToolDefinition, type ToolImpl, type ToolResult } from '@mavis/agent-core/tools';
+import { LeanGitSchema } from './lean-tool-schemas.js';
 import { spillToolOutput } from './artifact-spill.js';
 import type { LocalRuntimeToolContext } from './types.js';
 import type { Static } from '@sinclair/typebox';
@@ -10,8 +10,16 @@ const execFileAsync = promisify(execFile);
 
 export type LocalGitToolInput = Static<typeof LeanGitSchema>;
 
+export const LocalGitToolDef = {
+  name: 'git',
+  executionMode: 'parallel',
+  description: 'Run git commands in the workspace repository.',
+  schema: LeanGitSchema,
+} as const satisfies ToolDefinition;
+
+@bindTool(LocalGitToolDef)
 export class LocalGitTool implements ToolImpl<typeof LeanGitSchema, LocalRuntimeToolContext> {
-  readonly def = LeanGitTool;
+  readonly def = LocalGitToolDef;
 
   constructor(private readonly workspaceRoot: string) {}
 

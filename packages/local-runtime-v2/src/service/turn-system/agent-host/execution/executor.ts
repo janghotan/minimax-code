@@ -35,6 +35,13 @@ import {
   localPluginHookCoordinator as pluginHookCoordinator,
 } from '../assembly/local-turn-plugin-hooks.js';
 import { createObservationMaskingBeforeLlmHook } from './observation-masking-hook.js';
+import { getLeanAgentSettings } from '@mavis/config';
+import {
+  LEAN_SYSTEM_PROMPT,
+  getOrDetectProjectPreflight,
+  formatProjectPreflightLine,
+  recordLlmCallUsage,
+} from '@mavis/agent-tools/desktop';
 import { copyCanonicalHistoryForPiCompatibility } from '../history/canonical-history-validation.js';
 import type { AgentExecutionSnapshot, TurnOutputContract } from '../preparation/contracts.js';
 import type {
@@ -556,9 +563,30 @@ export class LocalRuntimeTurnExecutor<
       input.assembly.systemPromptPrefix,
       baseSystemPrompt,
     );
+
+    const leanSettings = getLeanAgentSettings();
+    const enforceSeven = leanSettings.toolSelection?.enforceSevenTools ?? true;
+
+    let effectiveTools = standardTools;
+    let effectiveSystemPrompt = standardSystemPrompt;
+
+    if (enforceSeven && !lightweightMode) {
+      const LEAN_TOOL_NAMES = new Set([
+        'bash', 'read', 'read_file', 'edit', 'edit_file', 'write', 'write_file', 'glob', 'grep', 'git'
+      ]);
+      effectiveTools = standardTools.filter((tool: any) =>
+        LEAN_TOOL_NAMES.has(tool.def?.name ?? tool.name)
+      );
+
+      const workspaceDir = input.session.workspaceDir ?? process.cwd();
+      const preflight = getOrDetectProjectPreflight(workspaceDir);
+      const preflightLine = formatProjectPreflightLine(preflight);
+      effectiveSystemPrompt = `${LEAN_SYSTEM_PROMPT}\n\nProject Environment: ${preflightLine}`;
+    }
+
     const providerContext = resolveProviderContextMode(input.session, {
-      systemPrompt: standardSystemPrompt,
-      tools: standardTools,
+      systemPrompt: effectiveSystemPrompt,
+      tools: effectiveTools,
       ...(standardContextUsagePromptRanges === undefined
         ? {}
         : { contextUsagePromptRanges: standardContextUsagePromptRanges }),
@@ -570,17 +598,19 @@ export class LocalRuntimeTurnExecutor<
     } = providerContext;
     observePtcTurnAdmission(input, ptc, this.options, { systemPrompt, tools });
     input.onContextUsagePromptRangesResolved?.(contextUsagePromptRanges);
-    const userPromptPrefix = joinUserPrompt(
-      input.assembly.userPromptPrefix,
-      renderAgentRuntimeReminders(input.assembly.reminders),
-      joinPrompt(
-        preparedExecution.reminderBlocks.join('\n\n'),
-        input.pluginHookContext
-          ? `<plugin-hook-context>\n${input.pluginHookContext}\n</plugin-hook-context>`
-          : '',
-      ),
-      '',
-    );
+    const userPromptPrefix = enforceSeven
+      ? ''
+      : joinUserPrompt(
+          input.assembly.userPromptPrefix,
+          renderAgentRuntimeReminders(input.assembly.reminders),
+          joinPrompt(
+            preparedExecution.reminderBlocks.join('\n\n'),
+            input.pluginHookContext
+              ? `<plugin-hook-context>\n${input.pluginHookContext}\n</plugin-hook-context>`
+              : '',
+          ),
+          '',
+        );
     let userMessage = withGenuineQueryProvenance(
       {
         ...preparedExecution.userMessage,
@@ -953,7 +983,57 @@ function mergeHooks<TAgent extends AgentExecutionSnapshot, TContext extends Tool
       },
       ...(input.assembly.hooks.onHistoryChangedHook ?? []),
     ],
-    onStepEndHook: input.assembly.hooks.onStepEndHook ?? [],
+    onStepEndHook: [
+      ...(input.assembly.hooks.onStepEndHook ?? []),
+      (stepInput) => {
+        try {
+          const msg = stepInput.message as any;
+          const usage = msg?.usage ?? {};
+          const inputTokens = typeof usage.input === 'number' ? usage.input : 0;
+          const outputTokens = typeof usage.output === 'number' ? usage.output : 0;
+          const cacheHitTokens = typeof usage.cacheRead === 'number' ? usage.cacheRead : 0;
+          const cacheMissTokens = typeof usage.cacheWrite === 'number' ? usage.cacheWrite : Math.max(0, inputTokens - cacheHitTokens);
+
+          const toolNames: string[] = [];
+          if (Array.isArray(msg?.content)) {
+            for (const part of msg.content) {
+              if (part?.type === 'toolCall' && part.name) {
+                toolNames.push(part.name);
+              }
+            }
+          }
+          if (toolNames.length === 0 && Array.isArray(stepInput.toolResults)) {
+            for (const res of stepInput.toolResults) {
+              if ((res as any)?.toolName) toolNames.push((res as any).toolName);
+            }
+          }
+
+          let reasoningTokens = 0;
+          if (Array.isArray(msg?.content)) {
+            for (const part of msg.content) {
+              if (part?.type === 'thinking' && typeof part.thinking === 'string') {
+                reasoningTokens += Math.ceil(part.thinking.length / 3.5);
+              }
+            }
+          }
+
+          const workspaceDir = input.preparation?.workspaceRoot ?? (input as any).session?.workspaceDir ?? process.cwd();
+          recordLlmCallUsage({
+            turn: input.lease.turnId,
+            tools: toolNames,
+            inputTokens,
+            cacheHit: cacheHitTokens,
+            cacheMiss: cacheMissTokens,
+            outputTokens,
+            reasoningTokens,
+            latencyMs: 0,
+            contextSize: inputTokens + outputTokens,
+          }, workspaceDir);
+        } catch {
+          // Usage logging failure must never fail the turn
+        }
+      },
+    ],
   };
 }
 
