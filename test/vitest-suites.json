@@ -7,6 +7,7 @@
     "capability": [
       "test/phase1-tool-diet.test.ts",
       "test/phase2-context-management.test.ts",
+      "test/phase3-prompt-diet.test.ts",
       "packages/local-runtime-v2/test/integration/compaction-openai-transport.integration.test.ts",
       "packages/local-runtime/test/unit/seed-builtin-shared-dir.test.ts",
       "packages/local-runtime/test/unit/skill-directory-symlinks.test.ts",

@@ -52,6 +52,7 @@ export * from './local-pi-tools.js';
 export * from './artifact-spill.js';
 export * from './test-backpressure.js';
 export * from './fuzzy-edit.js';
+export * from './lean-tool-schemas.js';
 export * from './ptc-result-projection.js';
 export * from './local-bash-result.js';
 export * from './local-bash-timing.js';
