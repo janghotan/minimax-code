@@ -11,9 +11,16 @@ export const SYSTEM_REMINDER_DESCRIPTION =
 export const TOOL_CALL_PREAMBLE_REMINDER =
   'Be terse. Before executing non-trivial tools, explain intent in at most 1 short sentence.';
 
-export const LANGUAGE_RULES =
+export const CODING_STANDARDS_RULES = [
+  '- Senior Staff Engineer Standard: Produce clean, type-safe, performant, and production-ready code with robust architecture.',
+  '- Mandatory Chinese Docstrings & Comments: Regardless of the conversation language, all code comments, docstrings, inline explanations, and function annotations MUST always be written in Simplified Chinese (代码注释与函数文档一律使用简体中文编写). Keep code identifiers in standard idiomatic English.',
+].join('\n');
+
+export const LANGUAGE_RULES = [
   'Follow explicit user language instructions. Otherwise, match the current conversation language; ' +
-  'use appLocale when no language preference is established.';
+    'use appLocale when no language preference is established.',
+  'IMPORTANT: When writing or modifying any code, all code comments, docstrings, and inline annotations MUST always be written in Simplified Chinese (代码注释与函数文档一律使用简体中文编写).',
+].join('\n');
 
 export const ENVIRONMENT_RULES = [
   'Use the working directory unless the user specifies another path.',

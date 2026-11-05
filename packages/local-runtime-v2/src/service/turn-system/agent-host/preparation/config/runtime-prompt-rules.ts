@@ -1,4 +1,5 @@
 import {
+  CODING_STANDARDS_RULES,
   FILE_OPERATION_RULES,
   LANGUAGE_RULES,
   SYSTEM_REMINDER_DESCRIPTION,
@@ -18,6 +19,12 @@ export function addRuntimeRules(
     );
   }
   let result = addSectionGuidance(prompt, '# Harness', harnessRules.join('\n'));
+  result = addSectionGuidance(
+    result,
+    '## Coding Conventions',
+    CODING_STANDARDS_RULES,
+    '# Role & Discipline',
+  );
   result = addSectionGuidance(
     result,
     '## Response Style',
