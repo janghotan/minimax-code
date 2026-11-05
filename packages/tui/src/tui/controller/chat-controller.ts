@@ -47,6 +47,7 @@ import { abortTuiChatTurn } from './run/chat-turn-abort.js';
 import { TuiRuntimeTurnSettlement } from './run/runtime-turn-settlement.js';
 import { createTuiSettledTurn } from './run/turn-settlement.js';
 import { TuiTurnStartLedger } from './run/turn-start-ledger.js';
+import { getGlobalCostTracker } from '../shell/lean-cost-tracker.js';
 
 export type { TuiSubmitStatus } from './chat-controller-support.js';
 export type {
@@ -809,6 +810,36 @@ export class TuiChatController {
     return this.batchNotifications(() => {
       if (event.type === 'message' && event.message.id)
         this.durableMessageAnchor = event.message.id;
+      if (event.type === 'message' && event.message.role === 'assistant') {
+        const usage = event.message.usage;
+        const currentModel = this.state.account?.model ?? this.state.account?.selectedModel;
+        const currentWindow = this.state.contextSnapshot?.model?.contextWindow ?? 64_000;
+        const promptTokens = usage?.inputTokens;
+        const completionTokens =
+          usage?.outputTokens ??
+          (promptTokens === undefined
+            ? Math.max(
+                1,
+                Math.round(
+                  ((event.message.content?.length ?? 0) + (event.message.thinking?.length ?? 0)) / 4,
+                ),
+              )
+            : 0);
+        const cacheHitTokens = usage?.cacheReadTokens ?? 0;
+        const cacheMissTokens =
+          promptTokens !== undefined ? Math.max(0, promptTokens - cacheHitTokens) : undefined;
+        const isEstimated = usage?.inputTokens === undefined && usage?.outputTokens === undefined;
+
+        getGlobalCostTracker().recordUsage({
+          model: currentModel,
+          promptTokens,
+          completionTokens,
+          promptCacheHitTokens: cacheHitTokens,
+          promptCacheMissTokens: cacheMissTokens,
+          isEstimated,
+          contextWindow: currentWindow,
+        });
+      }
       const outputTokensPerSecond = this.outputRate.apply(turnId, event);
       const outputTokensPerSecondEstimated = this.outputRate.currentEstimated();
       if (
@@ -837,6 +868,7 @@ export class TuiChatController {
     this.transcript.clear();
     this.durableMessageAnchor = undefined;
     this.historyMessageIds = [];
+    getGlobalCostTracker().reset();
     if (markSessionCleared) this.options.onSessionLifecycle?.();
     this.state = {
       status: 'idle',
@@ -974,6 +1006,21 @@ export class TuiChatController {
   }
 
   private updateState(patch: Partial<TuiChatSnapshot>): void {
+    if (patch.sessionUsage) {
+      getGlobalCostTracker().syncFromSessionUsage({
+        inputTokens: patch.sessionUsage.inputTokens,
+        outputTokens: patch.sessionUsage.outputTokens,
+        cacheReadTokens: patch.sessionUsage.cacheReadTokens,
+        turns: patch.sessionUsage.turns,
+        model: this.state.account?.model,
+      });
+    }
+    if (patch.contextSnapshot?.contextUsage) {
+      getGlobalCostTracker().syncUsedTokens(
+        patch.contextSnapshot.contextUsage.usedTokens,
+        patch.contextSnapshot.model?.contextWindow,
+      );
+    }
     const currentSessionId = this.state.session?.sessionId;
     const nextSessionId = 'session' in patch ? patch.session?.sessionId : currentSessionId;
     this.state = {

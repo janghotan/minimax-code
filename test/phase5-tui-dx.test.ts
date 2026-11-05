@@ -246,11 +246,33 @@ test('cost tracker: unlisted model shows "no price" marker without guessing', ()
   expect(cost.hasPrice).toBe(false);
   expect(cost.marker).toBe('no price');
 
-  const statusLine = tracker.formatPersistentStatusLine(65536);
+  const statusLine = tracker.formatPersistentStatusLine(65536, 'unlisted-exotic-model');
   expect(statusLine).toContain('💰 no price');
+  expect(statusLine).toContain('🧠');
 
   const breakdown = tracker.formatCostBreakdown('unlisted-exotic-model');
   expect(breakdown).toContain('Total Cost: no price (model unlisted in pricing.json)');
+});
+
+test('cost tracker: custom provider prefixes (e.g. custom_provider:gem/gemini-3-flash) match normalized models', () => {
+  const tracker = new LeanCostTracker();
+  tracker.recordUsage({
+    model: 'custom_provider:gem/gemini-3-flash',
+    promptTokens: 100_000,
+    promptCacheHitTokens: 20_000,
+    promptCacheMissTokens: 80_000,
+    completionTokens: 10_000,
+    contextWindow: 1_000_000,
+  });
+
+  const cost = tracker.calculateCost('custom_provider:gem/gemini-3-flash');
+  expect(cost.hasPrice).toBe(true);
+  expect(cost.currency).toBe('CNY');
+  expect(cost.totalCny).toBeGreaterThan(0);
+
+  const statusLine = tracker.formatPersistentStatusLine(1_000_000, 'custom_provider:gem/gemini-3-flash');
+  expect(statusLine).toContain('💰 ¥');
+  expect(statusLine).toContain('🧠 110k/1000k (11%)');
 });
 
 test('cost tracker: usage-missing fallback estimates from chars/4 and marks with ~', () => {

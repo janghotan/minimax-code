@@ -99,6 +99,44 @@ function formatTokenK(tokens: number): string {
   return `${Math.round(tokens / 1000)}k`;
 }
 
+export function cleanModelName(raw: string): string {
+  let name = raw.trim();
+  if (name.includes(':')) {
+    const parts = name.split(':');
+    name = parts[parts.length - 1];
+  }
+  if (name.includes('/')) {
+    const parts = name.split('/');
+    name = parts[parts.length - 1];
+  }
+  if (name.includes('#')) {
+    name = name.split('#')[0];
+  }
+  return name.toLowerCase().trim();
+}
+
+function findPricingEntry(
+  table: PricingTable,
+  rawModel: string,
+): { entry?: ModelPricingEntry; matchedKey?: string } {
+  if (table.models[rawModel]) {
+    return { entry: table.models[rawModel], matchedKey: rawModel };
+  }
+  const clean = cleanModelName(rawModel);
+  if (table.models[clean]) {
+    return { entry: table.models[clean], matchedKey: clean };
+  }
+  // Try substring / fuzzy matching
+  const keys = Object.keys(table.models);
+  for (const k of keys) {
+    const lk = k.toLowerCase();
+    if (clean === lk || clean.includes(lk) || lk.includes(clean)) {
+      return { entry: table.models[k], matchedKey: k };
+    }
+  }
+  return {};
+}
+
 export class LeanCostTracker {
   promptCacheHitTokens = 0;
   promptCacheMissTokens = 0;
@@ -108,6 +146,43 @@ export class LeanCostTracker {
   lastUsedTokens = 0;
   lastWindowLimit = 65536;
   model = 'deepseek-chat';
+
+  setModel(model: string): void {
+    if (model) this.model = model;
+  }
+
+  syncUsedTokens(used: number, limit?: number): void {
+    if (used > 0) {
+      this.lastUsedTokens = used;
+    }
+    if (limit && limit > 0) {
+      this.lastWindowLimit = limit;
+    }
+  }
+
+  syncFromSessionUsage(usage: {
+    inputTokens?: number;
+    outputTokens?: number;
+    cacheReadTokens?: number;
+    turns?: number;
+    model?: string;
+  }): void {
+    if (usage.model) this.model = usage.model;
+    if (typeof usage.turns === 'number' && usage.turns > this.turnCount) {
+      this.turnCount = usage.turns;
+    }
+    if (typeof usage.inputTokens === 'number' && typeof usage.outputTokens === 'number') {
+      const hit = usage.cacheReadTokens ?? 0;
+      const miss = Math.max(0, usage.inputTokens - hit);
+      const total = usage.inputTokens + usage.outputTokens;
+      if (total > this.promptCacheHitTokens + this.promptCacheMissTokens + this.completionTokens) {
+        this.promptCacheHitTokens = hit;
+        this.promptCacheMissTokens = miss;
+        this.completionTokens = usage.outputTokens;
+        this.lastUsedTokens = total;
+      }
+    }
+  }
 
   recordUsage(options: RecordUsageOptions): void {
     if (options.turnIncrement !== false) {
@@ -147,7 +222,7 @@ export class LeanCostTracker {
   calculateCost(modelId?: string): CostCalculationResult {
     const table = loadPricingTable();
     const targetModel = modelId || this.model;
-    const entry = table.models[targetModel];
+    const { entry } = findPricingEntry(table, targetModel);
 
     if (!entry) {
       return {
@@ -209,7 +284,8 @@ export class LeanCostTracker {
     return this.promptCacheHitTokens / totalInput;
   }
 
-  formatPersistentStatusLine(contextLimit?: number): string {
+  formatPersistentStatusLine(contextLimit?: number, modelId?: string): string {
+    const targetModel = modelId || this.model;
     const limit = contextLimit ?? this.lastWindowLimit;
     const used = this.lastUsedTokens;
     const percent = Math.min(100, Math.round((used / limit) * 100));
@@ -218,7 +294,7 @@ export class LeanCostTracker {
     const usedStr = `${estMark}${formatTokenK(used)}`;
     const limitStr = formatTokenK(limit);
 
-    const costRes = this.calculateCost();
+    const costRes = this.calculateCost(targetModel);
     let costStr = 'no price';
     if (costRes.hasPrice && costRes.totalCny !== undefined) {
       costStr = `${estMark}¥${costRes.totalCny.toFixed(3)}`;

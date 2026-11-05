@@ -275,7 +275,13 @@ function buildStatusSegment(
     case 'lean-metrics': {
       const tracker = getGlobalCostTracker();
       const windowLimit = contextWindowTokens(state);
-      const line = tracker.formatPersistentStatusLine(windowLimit);
+      if (state.model) {
+        tracker.setModel(state.model);
+      }
+      if (state.contextUsage && state.contextUsage.usedTokens > 0) {
+        tracker.syncUsedTokens(state.contextUsage.usedTokens, windowLimit);
+      }
+      const line = tracker.formatPersistentStatusLine(windowLimit, state.model);
       return createStatusSegment([line], { shrinkPriority: 80, preserveWhenNarrow: true });
     }
     case 'custom-command':
@@ -436,16 +442,16 @@ function renderStatusIdentity(
   return `${chalk.hex(colors.accent)('✦')} ${chalk.hex(colors.accent)(model)}${detail}`;
 }
 
-function contextWindowTokens(state: TuiShellState): number | undefined {
+function contextWindowTokens(state: TuiShellState): number {
   const usageWindow = state.contextUsage?.contextWindowTokens;
   const contextWindow =
     typeof usageWindow === 'number' && Number.isFinite(usageWindow) && usageWindow > 0
       ? usageWindow
       : state.contextWindowTokens;
-  if (contextWindow === undefined || !Number.isFinite(contextWindow) || contextWindow <= 0) {
-    return undefined;
+  if (typeof contextWindow === 'number' && Number.isFinite(contextWindow) && contextWindow > 0) {
+    return contextWindow;
   }
-  return contextWindow;
+  return 64_000;
 }
 
 function renderContextWindow(state: TuiShellState, compact = false): string {
