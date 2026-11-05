@@ -29,10 +29,19 @@ export function withByokErrorAttribution(input: {
 function formatByokErrorMessage(raw: unknown, providerId: string): string {
   const rawMessage = errorText(raw);
   if (rawMessage.startsWith(BYOK_ERROR_PREFIX)) return rawMessage;
+  const isUnreachable =
+    rawMessage.includes('ECONNREFUSED') ||
+    rawMessage.includes('ENOTFOUND') ||
+    rawMessage.includes('fetch failed') ||
+    rawMessage.includes('Failed to fetch') ||
+    rawMessage.includes('network error');
   const classified = classifyLLMErrorToCode(raw);
-  const detail = redactByokErrorMessage(
+  let detail = redactByokErrorMessage(
     withHttpStatus(classified?.message ?? rawMessage, rawMessage) || 'LLM provider request failed',
   );
+  if (isUnreachable) {
+    detail = `BYOK endpoint is unreachable. Please verify --base-url and network connectivity (${detail})`;
+  }
   return `${BYOK_ERROR_PREFIX}: ${JSON.stringify({
     errorCode: classified?.status_code ?? LLM_ERROR_CODES.LLM_UPSTREAM_ERROR,
     message: `BYOK provider ${providerId} upstream error: ${detail}`,

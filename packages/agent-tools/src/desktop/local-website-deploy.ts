@@ -39,6 +39,7 @@
 import { Type, type Static } from '@sinclair/typebox';
 import { lstat, realpath } from 'node:fs/promises';
 import { isAbsolute, join, relative, sep } from 'node:path';
+import { getLeanAgentSettings } from '@mavis/config';
 import {
   bindTool,
   type ToolDefinition,
@@ -177,6 +178,13 @@ export class LocalWebsiteDeployTool implements ToolImpl<
     input: LocalWebsiteDeployToolInput,
     signal?: AbortSignal,
   ): Promise<ToolResult> {
+    if (getLeanAgentSettings().declutter.disableCloudWebsiteDeploy) {
+      return aiReadableFailure(
+        'Cloud website deployment is disabled in lean mode. Deploy your static files to local or custom hosting instead.',
+        { reason: 'disabled', ok: false },
+      );
+    }
+
     if (signal?.aborted) {
       return aiReadableFailure(`Deploy was aborted before it started.`, {
         reason: 'aborted',

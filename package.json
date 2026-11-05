@@ -8,11 +8,17 @@
   "engines": {
     "node": ">=22.19 <23 || >=24.2 <27"
   },
+  "bin": {
+    "Minimax-coder": "./Minimax-coder"
+  },
   "scripts": {
+    "bench": "node scripts/bench.mjs",
+    "bench:baseline": "node scripts/bench.mjs --save-baseline",
     "build": "node scripts/build.mjs",
     "release:cli": "node scripts/release-cli.mjs",
     "start": "node dist/cli.js",
     "mcode": "node dist/cli.js",
+    "Minimax-coder": "./Minimax-coder",
     "verify": "node scripts/verify.mjs",
     "test:smoke": "node --test test/smoke.test.mjs",
     "test:policy": "node scripts/run-vitest-suite.mjs policy",

@@ -17,10 +17,10 @@ export interface ToolResultCompactionSettings {
 
 export const TOOL_RESULT_COMPACTION_DEFAULTS: Readonly<ToolResultCompactionSettings> = {
   enabled: true,
-  maxInlineKiB: 64,
-  mcpDetailsMaxInlineKiB: 32,
-  watermarkKiB: 256,
-  minSavingsKiB: 256,
+  maxInlineKiB: 8,
+  mcpDetailsMaxInlineKiB: 8,
+  watermarkKiB: 32,
+  minSavingsKiB: 16,
   minCandidateKiB: 2,
   keepRecentRounds: 5,
 };

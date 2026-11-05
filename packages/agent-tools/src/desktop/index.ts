@@ -49,6 +49,10 @@ export * from './local-ask-user.js';
 export * from './local-feature-enable.js';
 export * from './local-browser.js';
 export * from './local-pi-tools.js';
+export * from './artifact-spill.js';
+export * from './test-backpressure.js';
+export * from './fuzzy-edit.js';
+export * from './lean-tool-schemas.js';
 export * from './ptc-result-projection.js';
 export * from './local-bash-result.js';
 export * from './local-bash-timing.js';
@@ -209,3 +213,14 @@ export {
   DESKTOP_BASH_PREVIEW_BYTES,
   PTC_CHILD_FULL_OUTPUT_MAX_BYTES,
 } from './output-limit.js';
+export {
+  recordEditCheckpoint,
+  undoLastEdit,
+  getEditCheckpointCount,
+  clearEditCheckpoints,
+  type EditCheckpoint,
+} from './edit-checkpoint.js';
+export {
+  formatCompactUnifiedDiff,
+  formatGitCompactDiff,
+} from './compact-diff.js';

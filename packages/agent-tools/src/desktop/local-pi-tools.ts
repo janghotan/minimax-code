@@ -104,6 +104,13 @@ import {
   PTC_CHILD_FULL_OUTPUT_MAX_BYTES,
   withDesktopOutputContinuation,
 } from './output-limit.js';
+import { createHash } from 'node:crypto';
+import { writeFile } from 'node:fs/promises';
+import { getLeanAgentSettings } from '@mavis/config';
+import { spillToolOutput } from './artifact-spill.js';
+import { detectAndAugmentTestCommand, applyTestBackpressure } from './test-backpressure.js';
+import { applyFuzzyHunkEdit } from './fuzzy-edit.js';
+import { recordEditCheckpoint } from './edit-checkpoint.js';
 
 export function getLocalBashEnvironment(): {
   readonly platform: NodeJS.Platform;
@@ -131,18 +138,17 @@ export class LocalReadTool implements ToolImpl<
   LocalRuntimeToolContext
 > {
   private readonly tool: AgentTool;
-  /**
-   * For run_code children: no line limit, and Pi's byte limit raised to
-   * PTC_CHILD_FULL_OUTPUT_MAX_BYTES, so an over-budget window is cut by Pi
-   * before it becomes one huge numbered string (the read then falls back).
-   */
   private readonly uncappedTool: AgentTool;
+  private readonly fileReadHashes = new Map<string, { hash: string; turn: number }>();
 
   constructor(private readonly workspaceRoot: string) {
     // The host's request media extension encodes every tool result image to
     // `requestMedia.image`; a second resize here would cap it and add a note.
     const options = { autoResizeImages: false };
-    this.tool = createReadTool(workspaceRoot, options);
+    this.tool = createReadTool(workspaceRoot, {
+      ...options,
+      truncation: { maxLines: 300, maxBytes: 8 * 1024 },
+    });
     this.uncappedTool = createReadTool(workspaceRoot, {
       ...options,
       truncation: { maxLines: Number.POSITIVE_INFINITY, maxBytes: PTC_CHILD_FULL_OUTPUT_MAX_BYTES },
@@ -242,32 +248,63 @@ export class LocalReadTool implements ToolImpl<
       return withReadKind(readErrorResult(LocalReadToolDef.name, binary.message), 'text');
     }
 
+    // Deduplication check: if file is unchanged since earlier read in this session, return receipt
+    if (getLeanAgentSettings().readFile.dedupeSessionReads) {
+      try {
+        const fileBytes = await readFile(readAbs);
+        const hash = createHash('sha256').update(fileBytes).digest('hex').slice(0, 16);
+        const turn = (ctx as { turnIndex?: number }).turnIndex ?? 1;
+        const previous = this.fileReadHashes.get(readAbs);
+        if (
+          previous &&
+          previous.hash === hash &&
+          input.offset === undefined &&
+          input.limit === undefined
+        ) {
+          const text = `[File ${input.path} is unchanged since turn ${previous.turn} (sha256: ${hash})]`;
+          return withDesktopCompletenessReport(LocalReadToolDef.name, {
+            tool_name: LocalReadToolDef.name,
+            text,
+            content: [{ type: 'text', text }],
+            details: { deduplicated: true, turn: previous.turn, hash },
+          });
+        }
+        this.fileReadHashes.set(readAbs, { hash, turn });
+      } catch {
+        // file reading fallback handled by pi tool below
+      }
+    }
+
     // Strip `pages` before delegating: pi's read schema does not know the
     // parameter, and models occasionally send it for non-PDF files.
     const { pages: _pages, ...piInput } = input;
+    const effectiveLimit = input.limit ?? getLeanAgentSettings().readFile.defaultLimit;
+    const piInputWithLimit = { ...piInput, limit: effectiveLimit };
     // A run_code child reads the whole file, or exactly offset/limit: Pi's
     // 2000-line / 50 KB head limit, the 2000-character line cap and the
     // Desktop 24 KiB cap are for the model (see isPtcChildCall). Over
     // PTC_CHILD_FULL_OUTPUT_MAX_BYTES it gets the direct-call page and the
     // offset to continue instead, like a Bash child's preview.
     if (isPtcChildCall(ctx) && !(await fileOverPtcReadBudget(readAbs, input.limit))) {
-      const res = await this.uncappedTool.execute('', piInput, signal);
+      const res = await this.uncappedTool.execute('', piInputWithLimit, signal);
       const result = piReadResultToToolResult(LocalReadToolDef.name, res, {
         offset: input.offset,
         maxLineChars: Number.POSITIVE_INFINITY,
       });
       if (!textOverPtcReadBudget(result)) {
-        return withReadProgrammaticResult(result, input.limit, readCapSkipped(result));
+        return withReadProgrammaticResult(result, effectiveLimit, readCapSkipped(result));
       }
     }
-    const res = await this.tool.execute('', piInput, signal);
+    const res = await this.tool.execute('', piInputWithLimit, signal);
     const result = piReadResultToToolResult(LocalReadToolDef.name, res, {
       offset: input.offset,
     });
-    return withReadProgrammaticResult(
-      limitDesktopReadTextResult(result, input.offset),
-      input.limit,
-    );
+    const limited = limitDesktopReadTextResult(result, input.offset);
+    const spilled = spillToolOutput(limited.text, this.workspaceRoot, { toolName: 'read' });
+    const finalResult = spilled.isSpilled
+      ? { ...limited, text: spilled.text, content: [{ type: 'text' as const, text: spilled.text }] }
+      : limited;
+    return withReadProgrammaticResult(finalResult, effectiveLimit);
   }
 }
 
@@ -557,48 +594,129 @@ export class LocalEditTool implements ToolImpl<
     // withFileMutationQueue locking for free. The execution is then routed
     // through the line-number-retry wrapper so a model that pasted read's
     // `N→` prefixes into old_string still recovers (CR !4027 P1).
-    const capture = createCapturingEditOperations();
-    const { piInput, piResult } = await executeWithFailurePath(input.file_path, async () => {
-      const prepared = await buildPiEditInput(input, this.workspaceRoot);
-      const tool = createEditTool(this.workspaceRoot, { operations: capture.operations });
-      return {
-        piInput: prepared,
-        piResult: await executeEditWithLineNumberRetry(tool, prepared, signal),
-      };
-    });
-    const res =
-      piInput.replacedCount === undefined
-        ? piResult
-        : withReplaceAllCount(piResult, piInput.path, piInput.replacedCount);
-    const result = toToolResult(LocalEditToolDef.name, res);
-    const editCapture = capture.takeCapture(
-      resolveLocalCandidatePath(input.file_path, this.workspaceRoot),
-    );
-    // replace_all counts every occurrence it replaced; a single edit replaces one.
-    const data = {
-      path: input.file_path,
-      replacements: piInput.replacedCount ?? 1,
-      replaceAll: input.replace_all === true,
-    };
-    if (!editCapture) return withDesktopCompletenessReport(LocalEditToolDef.name, result, { data });
-    const normalized =
-      result.details?.line_number_prefixes_stripped === true
-        ? normalizeEditsForLineNumberRetry([
-            { oldText: input.old_string, newText: input.new_string },
-          ])?.[0]
-        : undefined;
-    return withDesktopCompletenessReport(
-      LocalEditToolDef.name,
-      withCompatibleEditToolResponse(result, {
-        filePath: editCapture.path,
-        oldString: normalized?.oldText ?? input.old_string,
-        newString: normalized?.newText ?? input.new_string,
-        originalFile: editCapture.originalFile,
+    const absolutePath = resolveLocalCandidatePath(input.file_path, this.workspaceRoot);
+    try {
+      const originalFile = await readFile(absolutePath, 'utf8');
+      const fileLines = originalFile.split(/\r?\n/);
+      const oldLines = input.old_string.split(/\r?\n/);
+      if (
+        fileLines.length > 10 &&
+        oldLines.length >= fileLines.length * 0.95 &&
+        input.old_string.trim() === originalFile.trim()
+      ) {
+        const errorText =
+          `Edit rejected: Whole-file rewrite attempted on ${input.file_path} (${fileLines.length} lines). ` +
+          `Provide a specific search/replace hunk with 2-3 lines of surrounding context instead.`;
+        return withDesktopCompletenessReport(
+          LocalEditToolDef.name,
+          {
+            tool_name: LocalEditToolDef.name,
+            text: errorText,
+            content: [{ type: 'text', text: errorText }],
+            isError: true,
+            details: { filePath: absolutePath, wholeFileRejected: true },
+          },
+          { data: { path: input.file_path, replacements: 0, replaceAll: false } },
+        );
+      }
+    } catch {
+      // File reading fallback handled by pi tool below
+    }
+
+    try {
+      const capture = createCapturingEditOperations();
+      const { piInput, piResult } = await executeWithFailurePath(input.file_path, async () => {
+        const prepared = await buildPiEditInput(input, this.workspaceRoot);
+        const tool = createEditTool(this.workspaceRoot, { operations: capture.operations });
+        return {
+          piInput: prepared,
+          piResult: await executeEditWithLineNumberRetry(tool, prepared, signal),
+        };
+      });
+      const res =
+        piInput.replacedCount === undefined
+          ? piResult
+          : withReplaceAllCount(piResult, piInput.path, piInput.replacedCount);
+      const result = toToolResult(LocalEditToolDef.name, res);
+      const editCapture = capture.takeCapture(
+        resolveLocalCandidatePath(input.file_path, this.workspaceRoot),
+      );
+      // replace_all counts every occurrence it replaced; a single edit replaces one.
+      const data = {
+        path: input.file_path,
+        replacements: piInput.replacedCount ?? 1,
         replaceAll: input.replace_all === true,
-        userModified: false,
-      }),
-      { data },
-    );
+      };
+      if (!editCapture) return withDesktopCompletenessReport(LocalEditToolDef.name, result, { data });
+      if (editCapture.originalFile !== undefined) {
+        recordEditCheckpoint(input.file_path, editCapture.originalFile);
+      }
+      const normalized =
+        result.details?.line_number_prefixes_stripped === true
+          ? normalizeEditsForLineNumberRetry([
+              { oldText: input.old_string, newText: input.new_string },
+            ])?.[0]
+          : undefined;
+      return withDesktopCompletenessReport(
+        LocalEditToolDef.name,
+        withCompatibleEditToolResponse(result, {
+          filePath: editCapture.path,
+          oldString: normalized?.oldText ?? input.old_string,
+          newString: normalized?.newText ?? input.new_string,
+          originalFile: editCapture.originalFile,
+          replaceAll: input.replace_all === true,
+          userModified: false,
+        }),
+        { data },
+      );
+    } catch (error) {
+      try {
+        const originalFile = await readFile(absolutePath, 'utf8');
+        const fuzzy = applyFuzzyHunkEdit(
+          originalFile,
+          input.old_string,
+          input.new_string,
+          input.file_path,
+        );
+        if (fuzzy.matched && fuzzy.newContent !== undefined) {
+          recordEditCheckpoint(input.file_path, originalFile);
+          await writeFile(absolutePath, fuzzy.newContent, 'utf8');
+          const successText = `Applied fuzzy edit to ${input.file_path} (lines ${fuzzy.matchedLines?.start ?? 1}-${fuzzy.matchedLines?.end ?? 1}).`;
+          return withDesktopCompletenessReport(
+            LocalEditToolDef.name,
+            {
+              tool_name: LocalEditToolDef.name,
+              text: successText,
+              content: [{ type: 'text', text: successText }],
+              details: {
+                filePath: absolutePath,
+                fuzzyMatched: true,
+                lines: fuzzy.matchedLines,
+              },
+            },
+            { data: { path: input.file_path, replacements: 1, replaceAll: false } },
+          );
+        } else if (fuzzy.failureMessage) {
+          return withDesktopCompletenessReport(
+            LocalEditToolDef.name,
+            {
+              tool_name: LocalEditToolDef.name,
+              text: fuzzy.failureMessage,
+              content: [{ type: 'text', text: fuzzy.failureMessage }],
+              isError: true,
+              details: {
+                filePath: absolutePath,
+                fuzzyFailed: true,
+              },
+            },
+            { data: { path: input.file_path, replacements: 0, replaceAll: false } },
+          );
+        }
+      } catch {
+        // Fall through to original error
+      }
+      throw error;
+    }
   }
 }
 
@@ -811,6 +929,11 @@ export class LocalBashTool implements ToolImpl<
     }
 
     const { run_in_background: _runInBackground, ...rest } = input;
+    const testDetection = detectAndAugmentTestCommand(input.command);
+    const commandToRun =
+      testDetection.isTestOrLint && testDetection.augmentedCommand
+        ? testDetection.augmentedCommand
+        : rest.command;
     // A PTC child runs against its program's deadline instead of the ordinary
     // foreground limit; the program reports that decision itself.
     const foregroundTiming: LocalBashTiming = ptcTimeout
@@ -818,10 +941,10 @@ export class LocalBashTool implements ToolImpl<
       : timing;
     const foregroundInput = permissionExecutionPlan
       ? copyWithPermissionExecutionPlan(
-          { ...rest, timeout: foregroundTiming.commandTimeoutSeconds },
+          { ...rest, command: commandToRun, timeout: foregroundTiming.commandTimeoutSeconds },
           permissionExecutionPlan,
         )
-      : { ...rest, timeout: foregroundTiming.commandTimeoutSeconds };
+      : { ...rest, command: commandToRun, timeout: foregroundTiming.commandTimeoutSeconds };
     if (ptcTimeout) ctx.ptcDeadline?.reportTimeout?.(ptcTimeout);
     if (
       ctx.canConsumeBackgroundBashOutput === true &&
@@ -937,6 +1060,47 @@ export class LocalBashTool implements ToolImpl<
       const limited = limitDesktopBashOutput(result.text, fullOutputPath, result.details);
       result = applyDesktopTextLimit(result, limited);
     }
+
+    const exitCode = readBashExecutionOutcome(result.details)?.exitCode;
+    if (testDetection.isTestOrLint && testDetection.runnerName) {
+      const backpressure = applyTestBackpressure(
+        result.text,
+        exitCode,
+        testDetection.runnerName,
+        this.workspaceRoot,
+      );
+      result = {
+        ...result,
+        text: backpressure.formattedText,
+        content: [{ type: 'text', text: backpressure.formattedText }],
+        details: {
+          ...result.details,
+          test_backpressure: true,
+          artifact: backpressure.artifactRel,
+        },
+      };
+    } else {
+      const spilled = spillToolOutput(result.text, this.workspaceRoot, {
+        toolName: 'bash',
+        exitCode,
+      });
+      if (spilled.isSpilled) {
+        result = {
+          ...result,
+          text: spilled.text,
+          content: [{ type: 'text', text: spilled.text }],
+          details: {
+            ...result.details,
+            artifact_spill: {
+              path: spilled.relativePath,
+              original_bytes: spilled.totalBytes,
+              original_lines: spilled.totalLines,
+            },
+          },
+        };
+      }
+    }
+
     result.details = this.consumeEnvSanitizationHint({
       ...(result.details ?? {}),
       ...(this.lastEnvRemoved.length > 0 ? { envSanitized: this.lastEnvRemoved } : {}),

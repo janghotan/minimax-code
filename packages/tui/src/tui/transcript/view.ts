@@ -25,6 +25,7 @@ import {
 } from './tool-definitions.js';
 import { isBackgroundBashTranscriptCell, presentTranscriptToolEvidence } from './tool-evidence.js';
 import { formatTuiToolSummary } from './presentation/tool-summary.js';
+import { formatUltraCompactToolLine } from './presentation/ultra-compact-tool.js';
 import { highlightSyntaxLines } from './presentation/syntax-highlight.js';
 import { renderTuiAgentTeamSummary } from '../agent-team/summary.js';
 import { renderTuiStructuredPreview } from './presentation/structured-preview.js';
@@ -1235,7 +1236,8 @@ function renderCell(
             definition?.summaryStyle === 'dot' ? ` · ${toolSummary}` : ` (${toolSummary})`,
           )
       : '';
-    const summary = `${marker} ${title}${target}`;
+    const ultraCompact = formatUltraCompactToolLine(cell, width);
+    const summary = ultraCompact || `${marker} ${title}${target}`;
     const lines = renderToolRow(connectedToNext ? '├' : '└', summary, width);
     if (displayMode !== 'collapsed' && cell.structuredPreview) {
       lines.push(

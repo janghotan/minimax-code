@@ -18,6 +18,7 @@ import {
   type TuiSideConversationPresentation,
 } from '../../commands/side-session.js';
 import { LIGHTWEIGHT_SESSION_PURPOSE } from '@mavis/protocol/local';
+import { getGlobalCostTracker } from '../../shell/lean-cost-tracker.js';
 
 export interface ResolveTuiVisiblePresentationInput {
   readonly snapshot: TuiChatSnapshot;
@@ -353,10 +354,23 @@ function resolveStableShell(input: ResolveTuiVisiblePresentationInput): TuiShell
     ...resolveAccountShellState(input.snapshot.account, input.selectedModel, input.selectedEffort),
     sessionCount: input.snapshot.sessions.length,
     sessionCacheReadRatio: sessionCacheMetrics?.cacheReadRatio,
-    contextUsage: input.snapshot.contextSnapshot?.contextUsage,
+    contextUsage:
+      input.snapshot.contextSnapshot?.contextUsage ??
+      (getGlobalCostTracker().lastUsedTokens > 0
+        ? {
+            usedTokens: getGlobalCostTracker().lastUsedTokens,
+            contextWindowTokens:
+              input.snapshot.contextSnapshot?.model?.contextWindow ??
+              input.selectedModel?.contextLimit ??
+              getGlobalCostTracker().lastWindowLimit ??
+              64_000,
+          }
+        : undefined),
     contextWindowTokens:
       input.snapshot.contextSnapshot?.model?.contextWindow ??
-      (session ? undefined : input.selectedModel?.contextLimit),
+      input.selectedModel?.contextLimit ??
+      getGlobalCostTracker().lastWindowLimit ??
+      64_000,
     busy: Boolean(input.currentLiveRunId),
     permissionMode: input.permissionMode?.mode,
     permissionModeUpdating: input.permissionMode?.updating ?? false,

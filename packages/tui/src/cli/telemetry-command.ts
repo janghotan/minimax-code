@@ -1,4 +1,4 @@
-import { getConfig, getConfigPath, type Config } from '@mavis/config';
+import { getConfig, getConfigPath, getLeanAgentSettings, type Config } from '@mavis/config';
 import {
   createMcodeBusinessTelemetryPreview,
   resolveMcodeBusinessTelemetryPolicy,
@@ -24,7 +24,9 @@ export function runMcodeTelemetryCommand(
   const environment = dependencies.environment ?? process.env;
   const config = (dependencies.readConfig ?? getConfig)();
   const channel = (configEnabled: boolean | undefined) =>
-    resolveMcodeBusinessTelemetryPolicy({ configEnabled, environment });
+    getLeanAgentSettings().declutter.disableTelemetry
+      ? { enabled: false, configured: configEnabled === true, blockedBy: 'hard-disabled' }
+      : resolveMcodeBusinessTelemetryPolicy({ configEnabled, environment });
   const policy = channel(config.telemetry.enabled);
   const status = {
     enabled: policy.enabled,

@@ -44,6 +44,22 @@ export const TUI_COMMAND_DESCRIPTORS = {
     name: 'compact',
     description: 'Shorten the active conversation',
   },
+  diff: {
+    name: 'diff',
+    description: 'Show git status and compact unified diff',
+  },
+  test: {
+    name: 'test',
+    description: 'Run project tests with output backpressure',
+  },
+  undo: {
+    name: 'undo',
+    description: 'Revert the last file edit via checkpoint',
+  },
+  cost: {
+    name: 'cost',
+    description: 'Show session token and cost breakdown in CNY',
+  },
   export: {
     name: 'export',
     description: 'Export the current Session as Markdown',

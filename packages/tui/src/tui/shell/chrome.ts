@@ -17,6 +17,7 @@ import { fitFirstStatusCandidate, fitLine, normalizeWidth } from './frame.js';
 import { formatTuiAgentStatusLine, type TuiAgentStatus } from './status-protocol.js';
 import { TUI_STATUS_LINE_DEFAULT_ITEMS, type TuiStatusLineItem } from './status-line-items.js';
 import { renderCustomStatusLines } from './custom-status-text.js';
+import { getGlobalCostTracker } from './lean-cost-tracker.js';
 
 export { type TuiRuntimeStatus, type TuiShellState } from './contracts.js';
 export { TuiWelcome } from './welcome/component.js';
@@ -271,6 +272,18 @@ function buildStatusSegment(
         ],
         { shrinkPriority: 50, dropPriority: 80 },
       );
+    case 'lean-metrics': {
+      const tracker = getGlobalCostTracker();
+      const windowLimit = contextWindowTokens(state);
+      if (state.model) {
+        tracker.setModel(state.model);
+      }
+      if (state.contextUsage && state.contextUsage.usedTokens > 0) {
+        tracker.syncUsedTokens(state.contextUsage.usedTokens, windowLimit);
+      }
+      const line = tracker.formatPersistentStatusLine(windowLimit, state.model);
+      return createStatusSegment([line], { shrinkPriority: 80, preserveWhenNarrow: true });
+    }
     case 'custom-command':
       return createStatusSegment(
         [
@@ -429,16 +442,16 @@ function renderStatusIdentity(
   return `${chalk.hex(colors.accent)('✦')} ${chalk.hex(colors.accent)(model)}${detail}`;
 }
 
-function contextWindowTokens(state: TuiShellState): number | undefined {
+function contextWindowTokens(state: TuiShellState): number {
   const usageWindow = state.contextUsage?.contextWindowTokens;
   const contextWindow =
     typeof usageWindow === 'number' && Number.isFinite(usageWindow) && usageWindow > 0
       ? usageWindow
       : state.contextWindowTokens;
-  if (contextWindow === undefined || !Number.isFinite(contextWindow) || contextWindow <= 0) {
-    return undefined;
+  if (typeof contextWindow === 'number' && Number.isFinite(contextWindow) && contextWindow > 0) {
+    return contextWindow;
   }
-  return contextWindow;
+  return 64_000;
 }
 
 function renderContextWindow(state: TuiShellState, compact = false): string {

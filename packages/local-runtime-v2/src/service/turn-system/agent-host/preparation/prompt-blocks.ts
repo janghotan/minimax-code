@@ -9,8 +9,7 @@ export const SYSTEM_REMINDER_DESCRIPTION =
   'Treat these reminders separately from the surrounding user input or tool output.';
 
 export const TOOL_CALL_PREAMBLE_REMINDER =
-  'For any non-trivial tool-call step, you MUST first send a non-empty, user-visible assistant text block. ' +
-  'Thinking or reasoning content does not count as the preamble.';
+  'Be terse. Before executing non-trivial tools, explain intent in at most 1 short sentence.';
 
 export const LANGUAGE_RULES =
   'Follow explicit user language instructions. Otherwise, match the current conversation language; ' +

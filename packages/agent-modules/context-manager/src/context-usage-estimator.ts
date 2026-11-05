@@ -61,16 +61,22 @@ export function estimatePreparedContextUsage(input: {
   };
 }
 
-/** Reads the context-window aliases used by supported model configurations. */
-export function readContextWindowTokens(model: unknown): number | undefined {
-  if (!model || typeof model !== 'object') return undefined;
-  for (const key of ['contextWindow', 'context_window', 'contextWindowTokens'] as const) {
-    const value = Reflect.get(model, key);
-    if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
-      return Math.max(1, Math.round(value));
+export const DEFAULT_CONTEXT_WINDOW_FLOOR = 64 * 1024;
+
+/** Reads the context-window aliases used by supported model configurations, defaulting to 64K floor if unknown. */
+export function readContextWindowTokens(
+  model: unknown,
+  fallbackFloor = DEFAULT_CONTEXT_WINDOW_FLOOR,
+): number {
+  if (model && typeof model === 'object') {
+    for (const key of ['contextWindow', 'context_window', 'contextWindowTokens'] as const) {
+      const value = Reflect.get(model, key);
+      if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+        return Math.max(1, Math.round(value));
+      }
     }
   }
-  return undefined;
+  return fallbackFloor;
 }
 
 function validPromptRanges(

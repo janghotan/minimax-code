@@ -36,6 +36,7 @@ export const TUI_STATUS_LINE_ITEMS = [
   'context-remaining',
   'context-meter',
   'custom-command',
+  'lean-metrics',
 ] as const;
 
 export type TuiStatusLineItem = (typeof TUI_STATUS_LINE_ITEMS)[number];
@@ -71,6 +72,10 @@ const TUI_STATUS_LINE_ITEM_ALIASES: Readonly<Record<string, TuiStatusLineItem>> 
   'context-bar': 'context-meter',
   'context-gauge': 'context-meter',
   custom: 'custom-command',
+  cost: 'lean-metrics',
+  tokens: 'lean-metrics',
+  metrics: 'lean-metrics',
+  'lean-status': 'lean-metrics',
 };
 
 const CANONICAL_ITEMS: ReadonlySet<string> = new Set<string>(TUI_STATUS_LINE_ITEMS);
@@ -114,6 +119,7 @@ export function parseTuiStatusLineItems(values: readonly string[]): readonly Tui
  * names `build-mode` explicitly.
  */
 export const TUI_STATUS_LINE_DEFAULT_ITEMS: readonly TuiStatusLineItem[] = [
+  'lean-metrics',
   'current-dir',
   'session-title',
   'git-branch',
