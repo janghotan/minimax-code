@@ -34,6 +34,13 @@ export const LeanEditFileSchema = Type.Object({
   new_hunk: Type.String({ description: 'Replacement text hunk' }),
 });
 
+export const LeanEditSchema = Type.Object({
+  file_path: Type.String({ description: 'File path to modify' }),
+  old_string: Type.String({ description: 'Exact text hunk to replace' }),
+  new_string: Type.String({ description: 'Replacement text hunk' }),
+  replace_all: Type.Optional(Type.Boolean({ description: 'Replace all occurrences' })),
+});
+
 export const LeanEditFileTool = {
   name: 'edit_file',
   description: 'Replace an exact hunk of text in a file with new text.',
@@ -83,6 +90,49 @@ export const LeanGitTool = {
   parameters: LeanGitSchema,
 } as const;
 
+export const LEAN_TOOL_DEFS: Record<string, { description: string; schema: any }> = {
+  bash: {
+    description: 'Execute a bash shell command in the workspace.',
+    schema: LeanBashSchema,
+  },
+  read: {
+    description: 'Read lines from a file with optional offset and limit.',
+    schema: LeanReadFileSchema,
+  },
+  read_file: {
+    description: 'Read lines from a file with optional offset and limit.',
+    schema: LeanReadFileSchema,
+  },
+  write: {
+    description: 'Write full content to a file (new files or full overwrites).',
+    schema: LeanWriteFileSchema,
+  },
+  write_file: {
+    description: 'Write full content to a file (new files or full overwrites).',
+    schema: LeanWriteFileSchema,
+  },
+  edit: {
+    description: 'Replace an exact hunk of text in a file with new text.',
+    schema: LeanEditSchema,
+  },
+  edit_file: {
+    description: 'Replace an exact hunk of text in a file with new text.',
+    schema: LeanEditFileSchema,
+  },
+  glob: {
+    description: 'Find file paths matching a glob pattern.',
+    schema: LeanGlobSchema,
+  },
+  grep: {
+    description: 'Search for a regex pattern in workspace files.',
+    schema: LeanGrepSchema,
+  },
+  git: {
+    description: 'Run git commands in the workspace repository.',
+    schema: LeanGitSchema,
+  },
+};
+
 export const LEAN_SEVEN_TOOLS = [
   LeanBashTool,
   LeanReadFileTool,
@@ -99,14 +149,15 @@ You are an expert terminal coding agent. You solve software engineering tasks wi
 - Chinese Docstrings & Comments: All code comments, docstrings, and inline explanations MUST be written in Simplified Chinese (代码注释与文档一律使用简体中文编写). Keep code identifiers in standard idiomatic English.
 - Be terse. Do not praise, chatter, summarize unasked, or use filler phrases.
 - No text before tool calls. After finishing, give one short final report.
+- Numbered Task Checklist: When the user request contains numbered tasks (1., 2., 3...), you MUST step through each numbered task and execute/verify EVERY numbered task with a concrete command (e.g. grep, test, diff) before concluding. If any task is unexecuted or unverified, you MUST execute it before reporting done. Never stop early or report done if any task is unexecuted.
 - Execute multiple independent tool calls in parallel within a single turn when possible.
 - Do NOT run exploratory environment discovery commands (git status, .gitignore, check-ignore, ls .venv). Rely on preflight facts in context; only probe if a command fails.
-- Finish immediately when tasks are done and tests pass (at most one final test run and one diff --stat).
+- Finish immediately when all requested tasks are done and tests pass (at most one final test run and one diff --stat).
 - Never echo file contents back in conversational responses.
 
 # Tool Usage Discipline
 - grep-before-read: Search with grep or glob to locate definitions or errors before reading files.
-- ranges: Use offset and limit with read_file on files over 100 lines. Do not read entire large files blindly.
-- diff-only edits: Use edit_file with precise old_hunk and new_hunk. Never rewrite entire files unless creating a new file.
+- ranges: Use offset and limit with read on files over 100 lines. Do not read entire large files blindly.
+- diff-only edits: ALWAYS use edit with precise old_string/old_hunk and new_string/new_hunk. Never rewrite entire files with write if the file has >60 lines (write on files >60 lines will be rejected).
 - test backpressure: Rely on concise test/build receipts. Do not repeat raw command logs.
 - git: Run git to inspect repository status and diffs when verifying changes.`;

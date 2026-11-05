@@ -5,57 +5,57 @@
   "models": {
     "deepseek-chat": {
       "prompt_cache_hit_cny_per_1m": 0.5,
-      "prompt_cache_miss_cny_per_1m": 2.0,
-      "completion_cny_per_1m": 8.0,
+      "prompt_cache_miss_cny_per_1m": 2,
+      "completion_cny_per_1m": 8,
       "source": "https://api-docs.deepseek.com/quick_start/pricing",
       "date": "2024-12-26"
     },
     "deepseek-reasoner": {
-      "prompt_cache_hit_cny_per_1m": 1.0,
-      "prompt_cache_miss_cny_per_1m": 4.0,
-      "completion_cny_per_1m": 16.0,
+      "prompt_cache_hit_cny_per_1m": 1,
+      "prompt_cache_miss_cny_per_1m": 4,
+      "completion_cny_per_1m": 16,
       "source": "https://api-docs.deepseek.com/quick_start/pricing",
       "date": "2024-12-26"
     },
     "deepseek-v3": {
       "prompt_cache_hit_cny_per_1m": 0.5,
-      "prompt_cache_miss_cny_per_1m": 2.0,
-      "completion_cny_per_1m": 8.0,
+      "prompt_cache_miss_cny_per_1m": 2,
+      "completion_cny_per_1m": 8,
       "source": "https://api-docs.deepseek.com/quick_start/pricing",
       "date": "2024-12-26"
     },
     "deepseek-r1": {
-      "prompt_cache_hit_cny_per_1m": 1.0,
-      "prompt_cache_miss_cny_per_1m": 4.0,
-      "completion_cny_per_1m": 16.0,
+      "prompt_cache_hit_cny_per_1m": 1,
+      "prompt_cache_miss_cny_per_1m": 4,
+      "completion_cny_per_1m": 16,
       "source": "https://api-docs.deepseek.com/quick_start/pricing",
       "date": "2024-12-26"
     },
     "minimax-text-01": {
-      "prompt_cache_hit_cny_per_1m": 1.0,
-      "prompt_cache_miss_cny_per_1m": 1.0,
-      "completion_cny_per_1m": 1.0,
+      "prompt_cache_hit_cny_per_1m": 1,
+      "prompt_cache_miss_cny_per_1m": 1,
+      "completion_cny_per_1m": 1,
       "source": "https://www.minimaxi.com/pricing",
       "date": "2025-01-15"
     },
     "minimax-text-02": {
-      "prompt_cache_hit_cny_per_1m": 1.0,
-      "prompt_cache_miss_cny_per_1m": 2.0,
-      "completion_cny_per_1m": 4.0,
+      "prompt_cache_hit_cny_per_1m": 1,
+      "prompt_cache_miss_cny_per_1m": 2,
+      "completion_cny_per_1m": 4,
       "source": "https://www.minimaxi.com/pricing",
       "date": "2025-01-15"
     },
     "abab6.5s-chat": {
-      "prompt_cache_hit_cny_per_1m": 1.0,
-      "prompt_cache_miss_cny_per_1m": 1.0,
-      "completion_cny_per_1m": 1.0,
+      "prompt_cache_hit_cny_per_1m": 1,
+      "prompt_cache_miss_cny_per_1m": 1,
+      "completion_cny_per_1m": 1,
       "source": "https://www.minimaxi.com/pricing",
       "date": "2025-01-15"
     },
     "abab7-chat": {
-      "prompt_cache_hit_cny_per_1m": 1.0,
-      "prompt_cache_miss_cny_per_1m": 2.0,
-      "completion_cny_per_1m": 4.0,
+      "prompt_cache_hit_cny_per_1m": 1,
+      "prompt_cache_miss_cny_per_1m": 2,
+      "completion_cny_per_1m": 4,
       "source": "https://www.minimaxi.com/pricing",
       "date": "2025-01-15"
     },
@@ -63,8 +63,8 @@
       "prompt_cache_hit_cny_per_1m": 0.136,
       "prompt_cache_miss_cny_per_1m": 0.544,
       "completion_cny_per_1m": 2.175,
-      "source": "https://ai.google.dev/pricing",
-      "date": "2025-01-15"
+      "source": "User configured via /price set",
+      "date": "2026-11-05"
     },
     "gemini-3.8-flash": {
       "prompt_cache_hit_cny_per_1m": 0.136,
@@ -118,7 +118,7 @@
     "gemini-2.0-flash": {
       "prompt_cache_hit_cny_per_1m": 0.18,
       "prompt_cache_miss_cny_per_1m": 0.725,
-      "completion_cny_per_1m": 2.90,
+      "completion_cny_per_1m": 2.9,
       "source": "https://ai.google.dev/pricing",
       "date": "2025-01-15"
     },
@@ -146,28 +146,28 @@
     "gpt-4o": {
       "prompt_cache_hit_cny_per_1m": 9.06,
       "prompt_cache_miss_cny_per_1m": 18.13,
-      "completion_cny_per_1m": 72.50,
+      "completion_cny_per_1m": 72.5,
       "source": "https://openai.com/api/pricing/",
       "date": "2025-01-15"
     },
     "o1": {
       "prompt_cache_hit_cny_per_1m": 54.38,
       "prompt_cache_miss_cny_per_1m": 108.75,
-      "completion_cny_per_1m": 435.00,
+      "completion_cny_per_1m": 435,
       "source": "https://openai.com/api/pricing/",
       "date": "2025-01-15"
     },
     "o1-mini": {
-      "prompt_cache_hit_cny_per_1m": 4.00,
-      "prompt_cache_miss_cny_per_1m": 8.00,
-      "completion_cny_per_1m": 32.00,
+      "prompt_cache_hit_cny_per_1m": 4,
+      "prompt_cache_miss_cny_per_1m": 8,
+      "completion_cny_per_1m": 32,
       "source": "https://openai.com/api/pricing/",
       "date": "2025-01-15"
     },
     "o3-mini": {
-      "prompt_cache_hit_cny_per_1m": 4.00,
-      "prompt_cache_miss_cny_per_1m": 8.00,
-      "completion_cny_per_1m": 32.00,
+      "prompt_cache_hit_cny_per_1m": 4,
+      "prompt_cache_miss_cny_per_1m": 8,
+      "completion_cny_per_1m": 32,
       "source": "https://openai.com/api/pricing/",
       "date": "2025-01-15"
     },
@@ -194,17 +194,24 @@
     },
     "claude-3-5-haiku": {
       "prompt_cache_hit_cny_per_1m": 0.73,
-      "prompt_cache_miss_cny_per_1m": 5.80,
-      "completion_cny_per_1m": 29.00,
+      "prompt_cache_miss_cny_per_1m": 5.8,
+      "completion_cny_per_1m": 29,
       "source": "https://www.anthropic.com/pricing",
       "date": "2025-01-15"
     },
     "ollama": {
-      "prompt_cache_hit_cny_per_1m": 0.0,
-      "prompt_cache_miss_cny_per_1m": 0.0,
-      "completion_cny_per_1m": 0.0,
+      "prompt_cache_hit_cny_per_1m": 0,
+      "prompt_cache_miss_cny_per_1m": 0,
+      "completion_cny_per_1m": 0,
       "source": "local",
       "date": "2025-01-15"
+    },
+    "custom_provider:gem/gemini-3.8-flash-high": {
+      "prompt_cache_hit_cny_per_1m": 0.136,
+      "prompt_cache_miss_cny_per_1m": 0.544,
+      "completion_cny_per_1m": 2.175,
+      "source": "User configured via /price set",
+      "date": "2026-11-05"
     }
   },
   "usd_to_cny": 7.25

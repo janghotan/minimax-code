@@ -38,6 +38,7 @@ import { createObservationMaskingBeforeLlmHook } from './observation-masking-hoo
 import { getLeanAgentSettings } from '@mavis/config';
 import {
   LEAN_SYSTEM_PROMPT,
+  LEAN_TOOL_DEFS,
   getOrDetectProjectPreflight,
   formatProjectPreflightLine,
   recordLlmCallUsage,
@@ -574,9 +575,21 @@ export class LocalRuntimeTurnExecutor<
       const LEAN_TOOL_NAMES = new Set([
         'bash', 'read', 'read_file', 'edit', 'edit_file', 'write', 'write_file', 'glob', 'grep', 'git'
       ]);
-      effectiveTools = standardTools.filter((tool: any) =>
-        LEAN_TOOL_NAMES.has(tool.def?.name ?? tool.name)
-      );
+      effectiveTools = standardTools
+        .filter((tool: any) => LEAN_TOOL_NAMES.has(tool.def?.name ?? tool.name))
+        .map((tool: any) => {
+          const name = tool.def?.name ?? tool.name;
+          const leanDef = LEAN_TOOL_DEFS[name];
+          if (!leanDef) return tool;
+          return {
+            ...tool,
+            def: {
+              ...tool.def,
+              description: leanDef.description,
+              schema: leanDef.schema,
+            },
+          };
+        });
 
       const workspaceDir = input.session.workspaceDir ?? process.cwd();
       const preflight = getOrDetectProjectPreflight(workspaceDir);
@@ -584,12 +597,19 @@ export class LocalRuntimeTurnExecutor<
       effectiveSystemPrompt = `${LEAN_SYSTEM_PROMPT}\n\nProject Environment: ${preflightLine}`;
     }
 
+    const effectivePromptRanges = (enforceSeven && !lightweightMode)
+      ? [
+          { kind: 'SYSTEM_PROMPT' as const, startOffset: 0, endOffset: LEAN_SYSTEM_PROMPT.length },
+          { kind: 'OTHER' as const, startOffset: LEAN_SYSTEM_PROMPT.length + 2, endOffset: effectiveSystemPrompt.length },
+        ]
+      : standardContextUsagePromptRanges;
+
     const providerContext = resolveProviderContextMode(input.session, {
       systemPrompt: effectiveSystemPrompt,
       tools: effectiveTools,
-      ...(standardContextUsagePromptRanges === undefined
+      ...(effectivePromptRanges === undefined
         ? {}
-        : { contextUsagePromptRanges: standardContextUsagePromptRanges }),
+        : { contextUsagePromptRanges: effectivePromptRanges }),
     });
     const {
       systemPrompt,
@@ -598,8 +618,15 @@ export class LocalRuntimeTurnExecutor<
     } = providerContext;
     observePtcTurnAdmission(input, ptc, this.options, { systemPrompt, tools });
     input.onContextUsagePromptRangesResolved?.(contextUsagePromptRanges);
+
+    const attachmentReminders = preparedExecution.reminderBlocks
+      .filter((block) => block.includes('<attachment'))
+      .join('\n\n');
+    const sessionIdReminder = input.session.sessionId
+      ? `<system-reminder>\nYOUR SESSION ID: ${input.session.sessionId}\n</system-reminder>`
+      : '';
     const userPromptPrefix = enforceSeven
-      ? ''
+      ? [attachmentReminders, sessionIdReminder].filter(Boolean).join('\n\n')
       : joinUserPrompt(
           input.assembly.userPromptPrefix,
           renderAgentRuntimeReminders(input.assembly.reminders),

@@ -1523,7 +1523,7 @@ export class TuiCommandFlow {
       },
       logout: () => this.runAuthCommand('logout'),
       doctor: async () => this.options.featureFlow.showConfigurationInspection(false),
-      context: async () => this.options.activeRunFlow.showContext(),
+      context: async ({ args }) => this.options.activeRunFlow.showContext(args),
       steer: async ({ raw }) => {
         if (this.options.interactionFlow.hasPending()) {
           this.options.setHint('Resolve the pending Agent interaction before steering.');

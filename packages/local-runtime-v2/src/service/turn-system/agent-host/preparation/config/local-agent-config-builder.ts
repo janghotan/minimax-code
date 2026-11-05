@@ -11,7 +11,12 @@ import {
   OUTPUT_REVISION_PROMPT_KEY,
   RETRY_CONTINUATION_PROMPT_KEY,
 } from './prompt-templates.js';
-import { resolveAgentCapabilities, type ResolvedAgentCapabilities } from '@mavis/config';
+import { resolveAgentCapabilities, type ResolvedAgentCapabilities, getLeanAgentSettings } from '@mavis/config';
+import {
+  LEAN_SYSTEM_PROMPT,
+  getOrDetectProjectPreflight,
+  formatProjectPreflightLine,
+} from '@mavis/agent-tools/desktop';
 import type { SessionRecord, TaskSessionBinding } from '../../../../session-system/index.js';
 import type {
   AgentExecutionSnapshot,
@@ -757,6 +762,20 @@ function buildSystemPrompt(scope: {
   readonly overrides: SystemPromptOverrides | undefined;
   readonly profile: LocalAgentExecutionProfile | undefined;
 }): ComposedPrompt {
+  const leanSettings = getLeanAgentSettings();
+  if (leanSettings.toolSelection?.enforceSevenTools) {
+    const preflight = getOrDetectProjectPreflight(scope.workspaceDir);
+    const preflightLine = formatProjectPreflightLine(preflight);
+    const text = `${LEAN_SYSTEM_PROMPT}\n\nProject Environment: ${preflightLine}`;
+    return {
+      text,
+      ranges: [
+        { kind: 'SYSTEM_PROMPT', startOffset: 0, endOffset: LEAN_SYSTEM_PROMPT.length },
+        { kind: 'OTHER', startOffset: LEAN_SYSTEM_PROMPT.length + 2, endOffset: text.length },
+      ],
+    };
+  }
+
   const { agent, sessionType, layers, customConfig, overrides, profile } = scope;
   const interactiveSurface =
     profile?.surface === undefined

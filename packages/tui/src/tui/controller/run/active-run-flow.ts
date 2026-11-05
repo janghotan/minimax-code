@@ -327,12 +327,13 @@ export class TuiActiveRunFlow {
     this.options.showInteraction(panel);
   }
 
-  async showContext(): Promise<void> {
+  async showContext(args?: readonly string[]): Promise<void> {
     if (this.isStopped()) return;
     const session = this.options.requireSession();
     if (!session) return;
+    const isRaw = args?.some((a) => a.trim() === '--raw') ?? false;
     const panel = new TuiReportInspectionPanel({
-      title: 'Context',
+      title: isRaw ? 'Context (Raw)' : 'Context',
       loadingMessage: 'Loading context details…',
       maxRows: () => {
         const rows = Number.isFinite(this.options.terminal.rows) ? this.options.terminal.rows : 24;
@@ -356,7 +357,7 @@ export class TuiActiveRunFlow {
         return;
       }
       const inspection = createTuiContextInspection(response);
-      panel.setResult(formatTuiContextSnapshot(response), inspection);
+      panel.setResult(formatTuiContextSnapshot(response, undefined, isRaw), inspection);
     } catch (error) {
       if (this.isStopped()) return;
       if (this.options.controller.snapshot().session?.sessionId !== session.sessionId) {

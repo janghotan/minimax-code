@@ -18,6 +18,7 @@ import {
 } from '@earendil-works/pi-coding-agent/tools';
 import { getShellConfig } from '@earendil-works/pi-coding-agent/shell';
 import type { AgentTool, AgentToolResult } from '@earendil-works/pi-agent-core';
+import { existsSync } from 'node:fs';
 import { access, readFile, stat } from "node:fs/promises";
 import {
   IMAGE_DIMENSION_HEADER_BYTES,
@@ -543,6 +544,24 @@ export class LocalWriteTool implements ToolImpl<
     signal?: AbortSignal,
   ): Promise<ToolResult> {
     if (signal?.aborted) throw new Error('Operation aborted');
+
+    // Reject overwriting existing files with >60 lines: force edit_file hunks to save tokens
+    const candidatePath = resolveLocalCandidatePath(input.path, this.workspaceRoot);
+    if (existsSync(candidatePath)) {
+      try {
+        const existingRaw = await readFile(candidatePath, 'utf8');
+        const existingLines = existingRaw.split('\n').length;
+        const newLines = input.content.split('\n').length;
+        if (existingLines > 60 || newLines > 60) {
+          return {
+            text: `Refactor/write rejected: '${input.path}' is an existing file with >60 lines (${existingLines} lines). To save tokens and avoid token bloat, you MUST use 'edit' (edit_file) with precise hunks instead of overwriting the full file with 'write'.`,
+            isError: true,
+          };
+        }
+      } catch {
+        // Fall back to write
+      }
+    }
     // Per-execute capture context. This tool instance is a process-level
     // singleton (buildLocalToolRegistry), so an instance-level pending map
     // would be shared across concurrent writes; binding capture to a single
@@ -586,6 +605,14 @@ export class LocalEditTool implements ToolImpl<
     signal?: AbortSignal,
   ): Promise<ToolResult> {
     if (signal?.aborted) throw new Error('Operation aborted');
+
+    const normalizedInput: LocalEditToolInput = {
+      file_path: input.file_path ?? (input as any).path ?? '',
+      old_string: input.old_string ?? (input as any).old_hunk ?? '',
+      new_string: input.new_string ?? (input as any).new_hunk ?? '',
+      replace_all: input.replace_all,
+    };
+    input = normalizedInput;
 
     // Translate the compatible style public schema (file_path + old_string +
     // new_string + optional replace_all) into pi's internal
