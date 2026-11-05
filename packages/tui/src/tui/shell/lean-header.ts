@@ -1,24 +1,26 @@
-import { getLeanAgentSettings } from '@mavis/config';
-import { visibleWidth } from '../rendering/text.js';
 import { centerToWidth } from './frame.js';
 
 const PINK_RGB: readonly [number, number, number] = [255, 0, 122];
 const ORANGE_RGB: readonly [number, number, number] = [255, 122, 0];
 
-const WAVEFORM_ART = [
-  '   ╭╮    ╭╮   ',
-  '╭╮ ││ ╭╮ ││ ╭╮',
-  '││╭╯│ ││╭╯│ ││',
-  '│││ │ │││ │ ││',
-  '││╰╮│ ││╰╮│ ││',
-  '╰╯ ││ ╰╯ ││ ╰╯',
-  '   ╰╯    ╰╯   ',
+/**
+ * Official MiniMax audio waveform logo in Unicode curves and box art:
+ * Left hook, 1st wave, tall 2nd wave, split center pillar, tall 4th wave, 5th wave, right hook.
+ */
+export const MINIMAX_LOGO_ART = [
+  '       ╭╮     ╭╮       ',
+  '  ╭╮   ││ ╭╮  ││   ╭╮  ',
+  '╭╮││ ╭╮││ ││  ││╭╮ ││╭╮',
+  '││││ ││││ ╰╯  ││││ ││││',
+  '╰╯││ ││││ ╭╮  ││││ ││╰╯',
+  '  ╰╯ ╰╯╰╯ ││  ╰╯╰╯ ╰╯  ',
+  '          ╰╯           ',
 ] as const;
 
-const COMPACT_WAVEFORM_ART = [
-  ' ╭╮  ╭╮ ',
-  '╭╯╰╮╭╯╰╮',
-  '╰──╯╰──╯',
+export const COMPACT_MINIMAX_LOGO_ART = [
+  ' ╭╮ ╭╮ ╭╮ ',
+  '╭╯╰╮││╭╯╰╮',
+  '╰──╯╰╯╰──╯',
 ] as const;
 
 /**
@@ -42,7 +44,7 @@ const RESET_ANSI = '\x1b[0m';
 const BOLD_ANSI = '\x1b[1m';
 
 /**
- * Interpolates between two RGB colors and formats the text with ANSI escape codes.
+ * Interpolates between Pink (#FF007A) and Orange (#FF7A00) across characters.
  * If colors are unsupported, returns uncolored plain text.
  */
 export function applyPinkToOrangeGradient(text: string, isColored: boolean = supportsColors()): string {
@@ -51,7 +53,7 @@ export function applyPinkToOrangeGradient(text: string, isColored: boolean = sup
   const chars = Array.from(text);
   const total = chars.length;
   if (total <= 1) {
-    return `${rgbAnsi(...PINK_RGB)}${text}${RESET_ANSI}`;
+    return `${BOLD_ANSI}${rgbAnsi(...PINK_RGB)}${text}${RESET_ANSI}`;
   }
 
   let result = '';
@@ -60,45 +62,24 @@ export function applyPinkToOrangeGradient(text: string, isColored: boolean = sup
     const r = PINK_RGB[0] + factor * (ORANGE_RGB[0] - PINK_RGB[0]);
     const g = PINK_RGB[1] + factor * (ORANGE_RGB[1] - PINK_RGB[1]);
     const b = PINK_RGB[2] + factor * (ORANGE_RGB[2] - PINK_RGB[2]);
-    result += `${rgbAnsi(r, g, b)}${chars[i]}`;
+    result += `${BOLD_ANSI}${rgbAnsi(r, g, b)}${chars[i]}`;
   }
   return `${result}${RESET_ANSI}`;
 }
 
 /**
- * Renders an original waveform header with a pink-to-orange ANSI gradient.
- * The project name is read from leanAgentConfig (default: "yourname") or passed explicitly.
- * Falls back to plain text when colors are unsupported.
+ * Renders the official MiniMax waveform logo centered with a pink-to-orange ANSI gradient.
+ * Completely removes any placeholder text.
+ * Falls back to uncolored plain text when colors are unsupported.
  */
-export function renderWaveformHeader(width: number, customProjectName?: string): string[] {
+export function renderWaveformHeader(width: number): string[] {
   const isColored = supportsColors();
-  const projectName =
-    customProjectName ??
-    process.env.MCODE_PROJECT_NAME ??
-    getLeanAgentSettings().tui.projectName ??
-    'yourname';
-
-  if (width < 20) {
-    const label = `${projectName}`;
-    return [isColored ? applyPinkToOrangeGradient(label, isColored) : label];
-  }
-
-  const art = width >= 36 ? WAVEFORM_ART : COMPACT_WAVEFORM_ART;
-  const nameRow = Math.floor(art.length / 2);
+  const art = width >= 30 ? MINIMAX_LOGO_ART : COMPACT_MINIMAX_LOGO_ART;
 
   const formattedLines: string[] = [];
-  for (let i = 0; i < art.length; i++) {
-    const rawLine = art[i];
+  for (const rawLine of art) {
     const coloredLine = applyPinkToOrangeGradient(rawLine, isColored);
-
-    if (i === nameRow) {
-      const styledName = isColored
-        ? `${BOLD_ANSI}${rgbAnsi(...ORANGE_RGB)}${projectName}${RESET_ANSI}`
-        : projectName;
-      formattedLines.push(centerToWidth(`${coloredLine}   ${styledName}`, width));
-    } else {
-      formattedLines.push(centerToWidth(coloredLine, width));
-    }
+    formattedLines.push(centerToWidth(coloredLine, width));
   }
 
   return formattedLines;

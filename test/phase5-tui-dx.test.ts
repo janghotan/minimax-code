@@ -28,10 +28,11 @@ beforeEach(() => {
   clearEditCheckpoints();
 });
 
-test('waveform header: renders pink-to-orange ANSI gradient and project name', () => {
-  const colored = renderWaveformHeader(50, 'custom-project');
+test('waveform header: renders MiniMax logo with pink-to-orange ANSI gradient without placeholder', () => {
+  const colored = renderWaveformHeader(50);
   expect(colored.length).toBeGreaterThan(0);
-  expect(colored.some((l) => l.includes('custom-project'))).toBe(true);
+  // Must NOT contain placeholder 'yourname'
+  expect(colored.some((l) => l.includes('yourname'))).toBe(false);
 
   // When colors are forced off, should contain uncolored text without ANSI escapes
   const plainGradient = applyPinkToOrangeGradient('test-text', false);

@@ -1,5 +1,5 @@
 export const MINIMAX_CODE_WELCOME_PASTE_IMAGE_SHORTCUT = '{paste-image-shortcut}';
-const MINIMAX_CODE_WELCOME_CHECKIN_TIP = '/checkin claims the daily reward.';
+const MINIMAX_CODE_WELCOME_CHECKIN_TIP = '/cost shows token usage and CNY cost breakdown.';
 
 export const MINIMAX_CODE_WELCOME_DESIGN = {
   sectionTitles: {
@@ -9,21 +9,23 @@ export const MINIMAX_CODE_WELCOME_DESIGN = {
   tipPool: [
     'Say what you want and how to verify it.',
     `Use @ for files; ${MINIMAX_CODE_WELCOME_PASTE_IMAGE_SHORTCUT} for images.`,
-    'Run /init to teach MCode this repo.',
+    'Use /diff to view compact uncommitted hunks.',
+    'Use /cost to check session CNY cost breakdown.',
+    'Use /test to run tests with backpressure.',
+    'Use /undo to revert the last file edit.',
     'Use /plan before a change that needs design or investigation.',
     'Use /context to check the current Session context budget.',
     'Use /sessions to resume earlier work.',
     'Use /history to review and branch from earlier prompts.',
     'Use /goal to keep long-running work focused on a finish line.',
     'Use /permission to choose how MCode handles tool approvals.',
-    'Use /feedback to preview a redacted report before upload.',
     MINIMAX_CODE_WELCOME_CHECKIN_TIP,
   ],
   wide: {
     tips: [
       'Say what you want and how to verify it.',
-      `Use @ for files; ${MINIMAX_CODE_WELCOME_PASTE_IMAGE_SHORTCUT} for images.`,
-      'Run /init to teach MCode this repo.',
+      `@ files · ${MINIMAX_CODE_WELCOME_PASTE_IMAGE_SHORTCUT} images`,
+      'Use /diff for compact hunks · /undo to revert edit',
       MINIMAX_CODE_WELCOME_CHECKIN_TIP,
     ],
     news: [
@@ -35,16 +37,16 @@ export const MINIMAX_CODE_WELCOME_DESIGN = {
   stacked: {
     tips: [
       'Say what you want and how to verify it.',
-      `@ files · ${MINIMAX_CODE_WELCOME_PASTE_IMAGE_SHORTCUT} images · /init guidance`,
-      '/checkin daily reward',
+      `@ files · ${MINIMAX_CODE_WELCOME_PASTE_IMAGE_SHORTCUT} images`,
+      '/cost breakdown · /diff compact · /undo revert',
     ],
     news: ['Follow-ups wait while MCode works.', '/context budget · /feedback preview'],
   },
   compact: {
     tips: [
       `@ files · ${MINIMAX_CODE_WELCOME_PASTE_IMAGE_SHORTCUT} images`,
-      '/init repo guidance',
-      '/checkin reward',
+      '/cost breakdown · /diff compact',
+      '/undo revert last edit',
     ],
     news: ['Follow-ups wait', '/context · /feedback'],
   },
