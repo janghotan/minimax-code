@@ -5,6 +5,7 @@ import {
   mkdirSync,
   rmSync,
   cpSync,
+  copyFileSync,
   chmodSync,
   writeFileSync,
 } from "node:fs";
@@ -129,6 +130,8 @@ for (const name of ["seccomp", "srt-win", "java-proxy-agent"]) {
   );
 }
 chmodSync(path.join(outdir, "cli.js"), 0o755);
+copyFileSync(path.join(outdir, "cli.js"), path.join(outdir, "Minimax-coder"));
+chmodSync(path.join(outdir, "Minimax-coder"), 0o755);
 await copyMcodeToolsArtifact(root, outdir);
 cpSync(path.join(root, 'packages/tui/src/cli/mcode-tools-launchers'), path.join(outdir, 'internal-bin'), { recursive: true });
 for (const name of ['internal-bin/mcode-tools', 'mcode-tools.js', 'matrix-mcp-stdio.js'])
