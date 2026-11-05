@@ -83,6 +83,8 @@ export interface LeanTuiConfig {
   readonly usdToCnyRate: number;
   /** Context lines for compact unified diffs (default: 2) */
   readonly diffContextLines: number;
+  /** Active TUI language: 'zh' | 'en' (default: 'zh') */
+  readonly language: 'zh' | 'en';
 }
 
 export interface LeanAgentSettings {
@@ -142,6 +144,7 @@ export const DEFAULT_LEAN_AGENT_SETTINGS: Readonly<LeanAgentSettings> = {
     projectName: 'Minimax-coder',
     usdToCnyRate: 7.25,
     diffContextLines: 2,
+    language: 'zh',
   },
 };
 

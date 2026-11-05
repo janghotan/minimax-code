@@ -60,6 +60,10 @@ export const TUI_COMMAND_DESCRIPTORS = {
     name: 'cost',
     description: 'Show session token and cost breakdown in CNY',
   },
+  language: {
+    name: 'language',
+    description: 'Switch TUI language between English and Simplified Chinese (/language en|zh)',
+  },
   export: {
     name: 'export',
     description: 'Export the current Session as Markdown',

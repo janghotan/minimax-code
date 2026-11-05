@@ -1024,7 +1024,7 @@ export class TuiChatController {
         outputTokens: patch.sessionUsage.outputTokens,
         cacheReadTokens: patch.sessionUsage.cacheReadTokens,
         turns: patch.sessionUsage.turns,
-        model: this.state.account?.model,
+        model: this.state.account?.modelId ?? this.state.contextSnapshot?.model?.id,
       });
     }
     if (patch.contextSnapshot?.contextUsage) {

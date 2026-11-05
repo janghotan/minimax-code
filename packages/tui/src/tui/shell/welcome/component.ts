@@ -12,9 +12,11 @@ import {
 import { resolveTuiLayoutPolicy } from '../layout-policy.js';
 import { formatTuiKeybinding, type TuiKeybindingRegistry } from '../keybindings.js';
 import {
+  getWelcomeDesign,
   MINIMAX_CODE_WELCOME_DESIGN,
   MINIMAX_CODE_WELCOME_PASTE_IMAGE_SHORTCUT,
 } from './design.js';
+import { getRuntimeLocaleLanguage } from '@mavis/shared/runtime-i18n';
 import { renderTuiWelcomeHero } from './hero.js';
 
 export interface TuiWelcomeContent {
@@ -103,10 +105,11 @@ function renderWideWelcome(
   width: number,
   { keybindings, content, staticBanner }: WelcomeRenderOptions,
 ): string[] {
-  const tips = resolveWelcomeItems(content?.tips, MINIMAX_CODE_WELCOME_DESIGN.wide.tips, 3);
+  const design = getWelcomeDesign();
+  const tips = resolveWelcomeItems(content?.tips, design.wide.tips, 3);
   const news = resolveWelcomeItems(
     content?.changelogEntries,
-    MINIMAX_CODE_WELCOME_DESIGN.wide.news,
+    design.wide.news,
     3,
   );
   return [
@@ -114,12 +117,12 @@ function renderWideWelcome(
     '',
     renderWelcomeHeader(state, width, staticBanner),
     ...(staticBanner ? [] : renderWelcomeAccountNoticeRows(state, width)),
-    renderFrameRow(renderSectionTitle(MINIMAX_CODE_WELCOME_DESIGN.sectionTitles.tips), width),
+    renderFrameRow(renderSectionTitle(design.sectionTitles.tips), width),
     ...tips.map((text) =>
       renderFrameRow(renderWelcomeBullet(resolveWelcomeCopy(text, keybindings)), width),
     ),
     renderFrameDivider(width),
-    renderFrameRow(renderSectionTitle(MINIMAX_CODE_WELCOME_DESIGN.sectionTitles.news), width),
+    renderFrameRow(renderSectionTitle(design.sectionTitles.news), width),
     ...news.map((text) =>
       renderFrameRow(renderWelcomeBullet(resolveWelcomeCopy(text, keybindings)), width),
     ),
@@ -132,10 +135,11 @@ function renderStackedWelcome(
   width: number,
   { keybindings, content, staticBanner }: WelcomeRenderOptions,
 ): string[] {
-  const tips = resolveWelcomeItems(content?.tips, MINIMAX_CODE_WELCOME_DESIGN.stacked.tips, 2);
+  const design = getWelcomeDesign();
+  const tips = resolveWelcomeItems(content?.tips, design.stacked.tips, 2);
   const news = resolveWelcomeItems(
     content?.changelogEntries,
-    MINIMAX_CODE_WELCOME_DESIGN.stacked.news,
+    design.stacked.news,
     3,
   );
   return [
@@ -144,12 +148,12 @@ function renderStackedWelcome(
     renderWelcomeHeader(state, width, staticBanner),
     ...(staticBanner ? [] : renderWelcomeAccountNoticeRows(state, width)),
     renderFrameDivider(width),
-    renderFrameRow(renderSectionTitle(MINIMAX_CODE_WELCOME_DESIGN.sectionTitles.tips), width),
+    renderFrameRow(renderSectionTitle(design.sectionTitles.tips), width),
     ...tips.map((text) =>
       renderFrameRow(renderWelcomeBullet(resolveWelcomeCopy(text, keybindings)), width),
     ),
     renderFrameRow('', width),
-    renderFrameRow(renderSectionTitle(MINIMAX_CODE_WELCOME_DESIGN.sectionTitles.news), width),
+    renderFrameRow(renderSectionTitle(design.sectionTitles.news), width),
     ...news.map((text) =>
       renderFrameRow(renderWelcomeBullet(resolveWelcomeCopy(text, keybindings)), width),
     ),
@@ -163,26 +167,28 @@ function renderCompactWelcome(
   width: number,
   { keybindings, content, staticBanner }: WelcomeRenderOptions,
 ): string[] {
-  const tips = resolveWelcomeItems(content?.tips, MINIMAX_CODE_WELCOME_DESIGN.compact.tips, 2);
+  const design = getWelcomeDesign();
+  const isZh = getRuntimeLocaleLanguage() === 'zh';
+  const tips = resolveWelcomeItems(content?.tips, design.compact.tips, 2);
   const news = resolveWelcomeItems(
     content?.changelogEntries,
-    MINIMAX_CODE_WELCOME_DESIGN.compact.news,
+    design.compact.news,
     3,
   );
   return [
     ...renderTuiWelcomeHero(width),
     '',
     renderFrameHeader(
-      `${chalk.bold.hex(colors.brand)('MCode')} ${chalk.hex(colors.muted)(`v${state.version}`)}`,
+      `${chalk.bold.hex(colors.brand)('MiniMax')} ${chalk.hex(colors.muted)(`v${state.version}`)}`,
       staticBanner ? '' : renderActivity(state),
       width,
     ),
     ...(staticBanner ? [] : renderWelcomeAccountNoticeRows(state, width)),
-    renderFrameRow(renderSectionTitle('Tips'), width),
+    renderFrameRow(renderSectionTitle(isZh ? '新手提示' : 'Tips'), width),
     ...tips.map((text) =>
       renderFrameRow(chalk.hex(colors.muted)(resolveWelcomeCopy(text, keybindings)), width),
     ),
-    renderFrameRow(renderSectionTitle(MINIMAX_CODE_WELCOME_DESIGN.sectionTitles.news), width),
+    renderFrameRow(renderSectionTitle(design.sectionTitles.news), width),
     ...news.map((text) => renderFrameRow(chalk.hex(colors.muted)(text), width)),
     renderFrameBottom(width),
   ];
@@ -220,12 +226,13 @@ function resolveWelcomeCopy(value: string, keybindings: TuiKeybindingRegistry | 
 }
 
 function resolveWelcomeAccountNotice(state: TuiShellState): string | undefined {
+  const isZh = getRuntimeLocaleLanguage() === 'zh';
   return state.accountStatus === 'Sign in with /login'
-    ? state.accountStatus
+    ? (isZh ? '请使用 /login 登录' : state.accountStatus)
     : state.accountStatus === 'Connected with warnings'
-      ? 'Check /provider or /status for details.'
+      ? (isZh ? '查看 /provider 或 /status 获取详细信息。' : 'Check /provider or /status for details.')
       : state.accountStatus === 'Account unavailable'
-        ? 'Check /status for details.'
+        ? (isZh ? '查看 /status 获取详细信息。' : 'Check /status for details.')
         : undefined;
 }
 
@@ -240,29 +247,30 @@ function renderWelcomeAccountNoticeRows(state: TuiShellState, width: number): st
 }
 
 function renderActivity(state: TuiShellState): string {
+  const isZh = getRuntimeLocaleLanguage() === 'zh';
   if (state.accountStatus === 'Sign in with /login') {
-    return chalk.bold.hex(colors.warning)('○ Login required');
+    return chalk.bold.hex(colors.warning)(isZh ? '○ 需要登录 (/login)' : '○ Login required');
   }
   if (state.runtimeStatus === 'error') {
-    return chalk.bold.hex(colors.error)('× Error');
+    return chalk.bold.hex(colors.error)(isZh ? '× 运行异常' : '× Error');
   }
   if (state.accountStatus === 'Checking account') {
-    return chalk.bold.hex(colors.signal)('◌ Checking account');
+    return chalk.bold.hex(colors.signal)(isZh ? '◌ 检查账户中' : '◌ Checking account');
   }
   if (state.accountStatus === 'Connected with warnings') {
-    return chalk.bold.hex(colors.warning)('○ Setup warning');
+    return chalk.bold.hex(colors.warning)(isZh ? '○ 配置警告' : '○ Setup warning');
   }
   if (state.accountStatus === 'Account unavailable') {
-    return chalk.bold.hex(colors.warning)('○ Account unavailable');
+    return chalk.bold.hex(colors.warning)(isZh ? '○ 账户不可用' : '○ Account unavailable');
   }
   if (state.runtimeStatus === 'ready') {
-    return chalk.bold.hex(colors.orbit)('● Ready');
+    return chalk.bold.hex(colors.orbit)(isZh ? '● 就绪' : '● Ready');
   }
   if (state.runtimeStatus === 'starting') {
-    return chalk.bold.hex(colors.signal)('◌ Starting');
+    return chalk.bold.hex(colors.signal)(isZh ? '◌ 启动中' : '◌ Starting');
   }
   if (state.runtimeStatus === 'offline') {
-    return chalk.bold.hex(colors.warning)('○ Offline');
+    return chalk.bold.hex(colors.warning)(isZh ? '○ 离线' : '○ Offline');
   }
-  return chalk.bold.hex(colors.error)('× Error');
+  return chalk.bold.hex(colors.error)(isZh ? '× 运行异常' : '× Error');
 }

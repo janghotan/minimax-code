@@ -58,9 +58,7 @@ const descriptions: Record<Exclude<TuiStatusLineItem, 'build-mode'>, readonly [s
 };
 
 function isChinese(locale?: string): boolean {
-  return (
-    getRuntimeLocaleLanguage(locale ?? Intl.DateTimeFormat().resolvedOptions().locale) === 'zh'
-  );
+  return getRuntimeLocaleLanguage(locale) === 'zh';
 }
 
 export function statusLineText(key: keyof typeof en, locale?: string): string {

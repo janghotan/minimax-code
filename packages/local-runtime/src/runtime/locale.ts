@@ -1,9 +1,11 @@
 /** Electron locale first; system locale fallback for CLI/headless hosts. */
 export function resolveLocalRuntimeLocale(): string {
+  const custom = process.env.MINIMAX_LANGUAGE?.trim() || process.env.MCODE_LANGUAGE?.trim();
+  if (custom) return custom;
   const electronLocale = process.env.MAVIS_ELECTRON_LOCALE?.trim();
   if (electronLocale === 'en' || electronLocale === 'zh') return electronLocale;
   const intlLocale = Intl.DateTimeFormat().resolvedOptions().locale;
   if (intlLocale) return intlLocale;
   const lang = process.env.LANG?.split('.')[0]?.replace('_', '-');
-  return lang || 'en';
+  return lang || 'zh-Hans';
 }

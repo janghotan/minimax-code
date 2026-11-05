@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { getRuntimeLocaleLanguage } from '@mavis/shared/runtime-i18n';
+import { getGlobalRuntimeLanguage, getRuntimeLocaleLanguage } from '@mavis/shared/runtime-i18n';
 
 declare const __IS_NPM_BUILD__: boolean | undefined;
 
@@ -126,9 +126,5 @@ function escapeRegExp(value: string): string {
 }
 
 function resolveSystemLocale(): string {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().locale;
-  } catch {
-    return 'en';
-  }
+  return getGlobalRuntimeLanguage();
 }

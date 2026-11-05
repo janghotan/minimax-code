@@ -308,6 +308,13 @@ const COMMAND_SOURCES: readonly TuiCommandSource[] = [
     discoverability: 'primary',
   },
   {
+    ...TUI_COMMAND_DESCRIPTORS.language,
+    aliases: ['lang', 'locale'],
+    category: 'Session',
+    argumentHint: '[en|zh]',
+    discoverability: 'primary',
+  },
+  {
     ...TUI_COMMAND_DESCRIPTORS.status,
     category: 'Runtime',
     readiness: 'controller',

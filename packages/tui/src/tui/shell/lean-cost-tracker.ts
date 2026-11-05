@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { getLeanAgentSettings } from '@mavis/config';
+import { getRuntimeLocaleLanguage } from '@mavis/shared/runtime-i18n';
 
 export interface ModelPricingEntry {
   readonly prompt_cache_hit_cny_per_1m?: number;
@@ -81,6 +82,7 @@ export interface RecordUsageOptions {
   rawChars?: number;
   turnIncrement?: boolean;
   contextWindow?: number;
+  isEstimated?: boolean;
 }
 
 export interface CostCalculationResult {
@@ -275,6 +277,9 @@ export class LeanCostTracker {
     if (options.contextWindow && options.contextWindow > 0) {
       this.lastWindowLimit = resolveModelContextLimit(this.model, options.contextWindow);
     }
+    if (options.isEstimated !== undefined) {
+      this.isEstimated = options.isEstimated;
+    }
 
     if (options.promptTokens !== undefined && Number.isFinite(options.promptTokens) && options.promptTokens > 0) {
       this.isEstimated = false;
@@ -376,7 +381,8 @@ export class LeanCostTracker {
     const limitStr = formatTokenK(limit);
 
     const costRes = this.calculateCost(targetModel);
-    let costStr = 'no price';
+    const isZh = getRuntimeLocaleLanguage() === 'zh';
+    let costStr = isZh ? '未收录定价' : 'no price';
     if (costRes.hasPrice && costRes.totalCny !== undefined) {
       costStr = `${estMark}¥${costRes.totalCny.toFixed(3)}`;
     }
@@ -388,6 +394,26 @@ export class LeanCostTracker {
     const targetModel = modelId || this.model;
     const costRes = this.calculateCost(targetModel);
     const hitRatio = (this.getCacheHitRatio() * 100).toFixed(1);
+    const isZh = getRuntimeLocaleLanguage() === 'zh';
+
+    if (isZh) {
+      const lines = [
+        '📊 会话成本与 Token 统计 (人民币):',
+        `  • 当前模型: ${targetModel}`,
+        `  • 缓存命中输入: ${this.promptCacheHitTokens.toLocaleString()} tokens`,
+        `  • 缓存未命中输入: ${this.promptCacheMissTokens.toLocaleString()} tokens`,
+        `  • 模型输出: ${this.completionTokens.toLocaleString()} tokens`,
+        `  • 缓存命中率: ${hitRatio}%`,
+      ];
+
+      if (costRes.hasPrice && costRes.totalCny !== undefined) {
+        lines.push(`  • 总消耗成本: ¥${costRes.totalCny.toFixed(4)} CNY`);
+      } else {
+        lines.push('  • 总消耗成本: 未收录定价 (定价表中未包含该模型)');
+      }
+
+      return lines.join('\n');
+    }
 
     const lines = [
       '📊 Session Cost Breakdown (CNY):',

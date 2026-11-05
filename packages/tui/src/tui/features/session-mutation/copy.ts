@@ -1,4 +1,4 @@
-import { getRuntimeLocaleLanguage } from '@mavis/shared/runtime-i18n';
+import { getGlobalRuntimeLanguage, getRuntimeLocaleLanguage } from '@mavis/shared/runtime-i18n';
 
 import {
   SESSION_HISTORY_COPY,
@@ -11,11 +11,7 @@ import { ZH_HANS_SESSION_HISTORY_COPY, ZH_HANS_SESSION_MUTATION_COPY } from './c
 export type { SessionHistoryCopyKey } from './copy.en.js';
 
 export function sessionMutationLocale(): string {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().locale;
-  } catch {
-    return 'en';
-  }
+  return getGlobalRuntimeLanguage();
 }
 
 function isChineseLocale(locale: string): boolean {

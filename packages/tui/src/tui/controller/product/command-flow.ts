@@ -1,4 +1,5 @@
 import { parsePluginMentions } from '@mavis/shared/plugin-mention';
+import { getGlobalRuntimeLanguage, setGlobalRuntimeLanguage } from '@mavis/shared/runtime-i18n';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { formatGitCompactDiff } from '../../shell/compact-diff.js';
@@ -1373,6 +1374,40 @@ export class TuiCommandFlow {
       cost: async () => {
         const summary = getGlobalCostTracker().formatCostBreakdown();
         this.options.append(summary);
+      },
+      language: async ({ args }) => {
+        const raw = args.trim().toLowerCase();
+        let target: 'zh' | 'en';
+        if (raw === 'zh' || raw === 'cn' || raw === 'chinese' || raw === '中文') {
+          target = 'zh';
+        } else if (raw === 'en' || raw === 'english' || raw === '英文') {
+          target = 'en';
+        } else if (!raw) {
+          target = getGlobalRuntimeLanguage() === 'zh' ? 'en' : 'zh';
+        } else {
+          this.options.append(
+            getGlobalRuntimeLanguage() === 'zh'
+              ? '用法: /language [zh|en] 或 /lang'
+              : 'Usage: /language [en|zh] or /lang',
+            'warning',
+          );
+          return 'retained';
+        }
+        setGlobalRuntimeLanguage(target);
+        const msg =
+          target === 'zh'
+            ? '已切换至简体中文界面。'
+            : 'Language switched to English.';
+        this.options.append(msg);
+        this.options.onChanged();
+      },
+      lang: async (invocation) => {
+        const handler = this.createHandlers().language;
+        return handler(invocation);
+      },
+      locale: async (invocation) => {
+        const handler = this.createHandlers().language;
+        return handler(invocation);
       },
       status: () => this.options.featureFlow.showAccountStatus(),
       tasks: async () => {

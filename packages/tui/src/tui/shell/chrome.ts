@@ -404,7 +404,7 @@ function fitStatusSegments(segments: readonly StatusSegment[], width: number): s
   return fitLine(render(), width);
 }
 
-function lightweightModeLabels(locale = Intl.DateTimeFormat().resolvedOptions().locale): string[] {
+function lightweightModeLabels(locale?: string): string[] {
   return getRuntimeLocaleLanguage(locale) === 'zh'
     ? ['轻量模式', '轻量', '轻']
     : ['Lightweight', 'Light', 'Lite'];
@@ -423,18 +423,19 @@ function renderStatusIdentity(
   density: 'full' | 'compact' | 'minimal',
 ): string {
   const model = formatStatusContextLabel(state.model ?? 'no model');
+  const isZh = getRuntimeLocaleLanguage() === 'zh';
   const thinking =
     density === 'minimal' || !state.thinking || state.effort
       ? undefined
       : density === 'compact'
-        ? `Think ${state.thinking === 'on' ? 'On' : 'Off'}`
-        : `Thinking ${state.thinking === 'on' ? 'On' : 'Off'}`;
+        ? (isZh ? `思考 ${state.thinking === 'on' ? '开' : '关'}` : `Think ${state.thinking === 'on' ? 'On' : 'Off'}`)
+        : (isZh ? `思考 ${state.thinking === 'on' ? '开启' : '关闭'}` : `Thinking ${state.thinking === 'on' ? 'On' : 'Off'}`);
   const effort =
     density === 'minimal' || !state.effort
       ? undefined
       : density === 'compact'
-        ? `Eff ${state.effort}`
-        : `Effort ${state.effort}`;
+        ? (isZh ? `级别 ${state.effort}` : `Eff ${state.effort}`)
+        : (isZh ? `思考级别 ${state.effort}` : `Effort ${state.effort}`);
   const detail = [thinking, effort]
     .filter((part): part is string => Boolean(part))
     .map((part) => `${statusDot()}${chalk.hex(colors.muted)(part)}`)
@@ -457,7 +458,9 @@ function contextWindowTokens(state: TuiShellState): number {
 function renderContextWindow(state: TuiShellState, compact = false): string {
   const window = contextWindowTokens(state);
   if (window === undefined) return '';
-  return chalk.hex(colors.muted)(`${compact ? 'Ctx' : 'Context'} ${formatContextWindow(window)}`);
+  const isZh = getRuntimeLocaleLanguage() === 'zh';
+  const prefix = isZh ? (compact ? '上下文' : '上下文容量') : (compact ? 'Ctx' : 'Context');
+  return chalk.hex(colors.muted)(`${prefix} ${formatContextWindow(window)}`);
 }
 
 /**
@@ -492,17 +495,21 @@ function renderContextRemaining(
     const filled = Math.round((remaining / 100) * cells);
     gauge = `▕${'█'.repeat(filled)}${'░'.repeat(cells - filled)}▏ `;
   }
+  const isZh = getRuntimeLocaleLanguage() === 'zh';
   const label =
     density === 'full'
-      ? `Context ${gauge}${remaining}% left`
-      : `Ctx ${gauge}${remaining}%`;
+      ? (isZh ? `剩余上下文 ${gauge}${remaining}%` : `Context ${gauge}${remaining}% left`)
+      : (isZh ? `余量 ${gauge}${remaining}%` : `Ctx ${gauge}${remaining}%`);
   return chalk.hex(color)(label);
 }
 
 function renderSubagentIdentity(state: TuiShellState, compact = false): string {
   if (state.sessionRole !== 'subagent') return '';
   const agent = formatStatusContextLabel(state.sessionAgentName?.trim() || 'sub-agent');
-  const label = compact ? `Sub:${agent}` : `Sub: ${agent}`;
+  const isZh = getRuntimeLocaleLanguage() === 'zh';
+  const label = compact
+    ? (isZh ? `子:${agent}` : `Sub:${agent}`)
+    : (isZh ? `子任务: ${agent}` : `Sub: ${agent}`);
   return chalk.hex(colors.muted)(label);
 }
 
@@ -609,16 +616,17 @@ function statusDot(): string {
 
 function renderPlanMode(state: TuiShellState, compact = false): string {
   if (state.planMode !== 'plan' && !state.planModeTransition) return '';
-  const label = state.planMode === 'plan' ? 'PLAN' : 'DEFAULT';
+  const isZh = getRuntimeLocaleLanguage() === 'zh';
+  const label = state.planMode === 'plan' ? (isZh ? '计划' : 'PLAN') : (isZh ? '默认' : 'DEFAULT');
   const suffix =
     state.planModeTransition === 'next-message'
       ? compact
         ? '…'
-        : ' next'
+        : (isZh ? ' 下条' : ' next')
       : state.planModeTransition === 'submitting'
         ? compact
           ? '…'
-          : ' submitting'
+          : (isZh ? ' 提交中' : ' submitting')
         : '';
   return chalk.bold.hex(colors.accent)(`${label}${suffix}`);
 }

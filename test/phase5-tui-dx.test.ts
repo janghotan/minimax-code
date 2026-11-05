@@ -23,6 +23,17 @@ import type { TranscriptCell } from '../packages/tui/src/tui/transcript/model.js
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import {
+  getGlobalRuntimeLanguage,
+  setGlobalRuntimeLanguage,
+  resetGlobalRuntimeLanguage,
+} from '@mavis/shared/runtime-i18n';
+import { getWelcomeDesign } from '../packages/tui/src/tui/shell/welcome/design.js';
+import {
+  formatTuiPermissionMode,
+  formatTuiPermissionModeCompact,
+} from '../packages/tui/src/application/permission-mode.js';
+import { composerText } from '../packages/tui/src/tui/features/composer/copy.js';
 
 beforeEach(() => {
   resetLeanAgentSettings();
@@ -408,4 +419,76 @@ test('ultra-compact tool lines: formats write_file and diffs in cell.detail with
   expect(diffLine).toContain('src/server.ts');
   expect(diffLine).toContain('\x1b[32m(+2)');
   expect(diffLine).toContain('\x1b[31m(-1)');
+});
+
+test('language switching: /language toggles between Simplified Chinese and English', () => {
+  resetGlobalRuntimeLanguage();
+
+  // Switch to Simplified Chinese
+  setGlobalRuntimeLanguage('zh');
+  expect(getGlobalRuntimeLanguage()).toBe('zh');
+
+  // Verify welcome design adapts to Chinese
+  const zhDesign = getWelcomeDesign();
+  expect(zhDesign.sectionTitles.tips).toContain('新手快速上手指南');
+  expect(zhDesign.sectionTitles.news).toContain('最新功能');
+
+  // Verify permission mode in Chinese
+  expect(formatTuiPermissionMode('default')).toBe('询问');
+  expect(formatTuiPermissionMode('auto')).toBe('自动');
+  expect(formatTuiPermissionMode('bypassPermissions')).toBe('完全访问');
+  expect(formatTuiPermissionModeCompact('default')).toBe('询问');
+  expect(formatTuiPermissionModeCompact('bypassPermissions')).toBe('完全');
+
+  // Verify composer placeholder in Chinese
+  expect(composerText('placeholder')).toContain('MiniMax');
+
+  // Verify cost breakdown in Chinese
+  const tracker = new LeanCostTracker();
+  tracker.recordUsage({
+    model: 'deepseek-chat',
+    promptTokens: 10_000,
+    promptCacheHitTokens: 8_000,
+    promptCacheMissTokens: 2_000,
+    completionTokens: 500,
+  });
+  const zhBreakdown = tracker.formatCostBreakdown('deepseek-chat');
+  expect(zhBreakdown).toContain('会话成本与 Token 统计 (人民币)');
+  expect(zhBreakdown).toContain('当前模型: deepseek-chat');
+  expect(zhBreakdown).toContain('缓存命中输入: 8,000 tokens');
+  expect(zhBreakdown).toContain('总消耗成本: ¥');
+
+  // Switch to English
+  setGlobalRuntimeLanguage('en');
+  expect(getGlobalRuntimeLanguage()).toBe('en');
+
+  // Verify welcome design adapts to English
+  const enDesign = getWelcomeDesign();
+  expect(enDesign.sectionTitles.tips).toContain('Tips for getting started');
+
+  // Verify permission mode in English
+  expect(formatTuiPermissionMode('default')).toBe('Ask');
+  expect(formatTuiPermissionMode('auto')).toBe('Auto');
+  expect(formatTuiPermissionMode('bypassPermissions')).toBe('Full access');
+  expect(formatTuiPermissionModeCompact('default')).toBe('ASK');
+
+  // Verify composer placeholder in English
+  expect(composerText('placeholder')).toBe('Ask Mcode to do anything');
+
+  // Verify cost breakdown in English
+  const enBreakdown = tracker.formatCostBreakdown('deepseek-chat');
+  expect(enBreakdown).toContain('Session Cost Breakdown (CNY)');
+  expect(enBreakdown).toContain('Total Cost: ¥');
+
+  resetGlobalRuntimeLanguage();
+});
+
+test('command catalog: registers /language command with aliases lang and locale', () => {
+  const catalog = createTuiCommandCatalog();
+  const langCommand = catalog.commands.find((c) => c.name === 'language');
+  expect(langCommand).toBeDefined();
+  expect(langCommand?.category).toBe('Session');
+  expect(langCommand?.aliases).toContain('lang');
+  expect(langCommand?.aliases).toContain('locale');
+  expect(langCommand?.argumentHint).toBe('[en|zh]');
 });

@@ -17,6 +17,36 @@ import {
   getDefaultTuiKeybindingRegistry,
   type TuiKeybindingRegistry,
 } from '../../shell/keybindings.js';
+import { getRuntimeLocaleLanguage } from '@mavis/shared/runtime-i18n';
+
+const COMMAND_DESCRIPTIONS_ZH: Readonly<Record<string, string>> = {
+  help: '显示可用斜杠命令与快捷键帮助',
+  new: '在当前工作区开启新会话',
+  model: '切换或查看 AI 模型',
+  status: '查看账户、模型及运行状态',
+  doctor: '诊断本地环境与配置文件',
+  context: '查看会话上下文快照与 Token 占用',
+  skills: '列出内置与用户定义的技能',
+  mcp: '查看 MCP 工具与项目配置',
+  usage: '查看当前会话 Token 用量与统计',
+  compact: '精简压缩当前会话上下文',
+  diff: '查看 Git 状态与紧凑代码差异',
+  test: '执行项目测试并附带背压诊断',
+  undo: '撤销上一次文件编辑操作',
+  cost: '查看会话 Token 消耗及人民币花费统计',
+  language: '切换中英文界面 (/language [zh|en])',
+  lang: '切换中英文界面 (/lang [zh|en])',
+  locale: '切换中英文界面 (/locale [zh|en])',
+  export: '将当前会话导出为 Markdown 文件',
+  feedback: '提交产品使用反馈',
+  changelog: '查看版本更新日志与更新历史',
+  permission: '配置工具调用权限模式 (询问/自动/完全访问)',
+  sessions: '管理与恢复历史会话',
+  history: '查看历史消息并创建分支',
+  plan: '切换或退出计划模式',
+  tasks: '查看后台任务与 Agent 执行状态',
+  settings: '打开设置面板',
+};
 
 export interface TuiHelpPanelOptions {
   commands: readonly TuiCommand[];
@@ -100,13 +130,15 @@ export class TuiHelpPanel implements Component {
             total: content.length,
           }
         : undefined;
+    const isZh = getRuntimeLocaleLanguage() === 'zh';
     return panelLayout(width, height, this.renderFooter(position)).render({
-      title: 'Help',
+      title: isZh ? '帮助' : 'Help',
       body: visible,
     });
   }
 
   private renderContent(width: number): string[] {
+    const isZh = getRuntimeLocaleLanguage() === 'zh';
     const queueEnabled = this.options.queueEnabled ?? true;
     const keybindings = this.options.keybindings ?? getDefaultTuiKeybindingRegistry();
     const shortcuts = [
@@ -116,7 +148,13 @@ export class TuiHelpPanel implements Component {
       })),
       {
         keys: 'Enter',
-        description: queueEnabled ? 'Send; while MCode works it sends next' : 'Send while idle',
+        description: isZh
+          ? queueEnabled
+            ? '发送；MiniMax 执行时排队下一条'
+            : '空闲时发送'
+          : queueEnabled
+            ? 'Send; while MCode works it sends next'
+            : 'Send while idle',
       },
     ];
     const commandLabelWidth = columnWidth(this.commands.map(formatTuiCommandUsage), width, 12);
@@ -127,17 +165,19 @@ export class TuiHelpPanel implements Component {
     );
 
     return [
-      `  ${chalk.bold.hex(colors.text)('Keyboard shortcuts')}`,
+      `  ${chalk.bold.hex(colors.text)(isZh ? '快捷键' : 'Keyboard shortcuts')}`,
       ...shortcuts.map((shortcut) =>
         formatHelpRow(shortcut.keys, shortcut.description, shortcutLabelWidth, width, (value) =>
           chalk.hex(colors.signal)(value),
         ),
       ),
       '',
-      `  ${chalk.bold.hex(colors.text)('Slash commands')}`,
+      `  ${chalk.bold.hex(colors.text)(isZh ? '斜杠命令' : 'Slash commands')}`,
       ...this.commands.map((command) => {
         const usage = formatTuiCommandUsage(command);
-        return formatHelpRow(usage, command.description, commandLabelWidth, width, (value) =>
+        const description =
+          (isZh && COMMAND_DESCRIPTIONS_ZH[command.name.toLowerCase()]) || command.description;
+        return formatHelpRow(usage, description, commandLabelWidth, width, (value) =>
           chalk.hex(colors.signal)(value),
         );
       }),
@@ -145,13 +185,24 @@ export class TuiHelpPanel implements Component {
   }
 
   private renderFooter(position?: { first: number; last: number; total: number }): string {
+    const isZh = getRuntimeLocaleLanguage() === 'zh';
     const keybindings = this.options.keybindings ?? getDefaultTuiKeybindingRegistry();
     const closeKey = formatTuiKeybinding('app.interrupt', keybindings);
-    const close = closeKey === 'Esc' ? 'Esc close' : `Esc close · ${closeKey} to close`;
+    const close = isZh
+      ? closeKey === 'Esc'
+        ? 'Esc 关闭'
+        : `Esc 关闭 · ${closeKey} 关闭`
+      : closeKey === 'Esc'
+        ? 'Esc close'
+        : `Esc close · ${closeKey} to close`;
     const range = position
-      ? `showing ${String(position.first)}-${String(position.last)} of ${String(position.total)}`
+      ? isZh
+        ? `显示 ${String(position.first)}-${String(position.last)} / 共 ${String(position.total)}`
+        : `showing ${String(position.first)}-${String(position.last)} of ${String(position.total)}`
       : '';
-    const scroll = `↑↓ / ${formatTuiKeybinding('interaction.scroll-up', keybindings)} / ${formatTuiKeybinding('interaction.scroll-down', keybindings)} scroll`;
+    const scroll = isZh
+      ? `↑↓ / ${formatTuiKeybinding('interaction.scroll-up', keybindings)} / ${formatTuiKeybinding('interaction.scroll-down', keybindings)} 滚动`
+      : `↑↓ / ${formatTuiKeybinding('interaction.scroll-up', keybindings)} / ${formatTuiKeybinding('interaction.scroll-down', keybindings)} scroll`;
     return renderTuiActionHint([range, scroll, close].filter(Boolean).join(' · '));
   }
 
