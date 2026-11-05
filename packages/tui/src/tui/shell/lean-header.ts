@@ -1,5 +1,3 @@
-import { centerToWidth } from './frame.js';
-
 const PINK_RGB: readonly [number, number, number] = [255, 0, 122];
 const ORANGE_RGB: readonly [number, number, number] = [255, 122, 0];
 
@@ -82,7 +80,7 @@ export function applyPinkToOrangeGradient(text: string, isColored: boolean = sup
 }
 
 /**
- * Renders the official MiniMax waveform logo centered with a pink-to-orange ANSI gradient.
+ * Renders the official MiniMax waveform logo left-aligned with a pink-to-orange ANSI gradient.
  * Completely removes any placeholder text.
  * Falls back to uncolored plain text when colors are unsupported.
  */
@@ -93,7 +91,7 @@ export function renderWaveformHeader(width: number): string[] {
   const formattedLines: string[] = [];
   for (const rawLine of art) {
     const coloredLine = applyPinkToOrangeGradient(rawLine, isColored);
-    formattedLines.push(centerToWidth(coloredLine, width));
+    formattedLines.push(`  ${coloredLine}`);
   }
 
   return formattedLines;

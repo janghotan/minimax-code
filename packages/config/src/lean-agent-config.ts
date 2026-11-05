@@ -85,6 +85,8 @@ export interface LeanTuiConfig {
   readonly diffContextLines: number;
   /** Active TUI language: 'zh' | 'en' (default: 'zh') */
   readonly language: 'zh' | 'en';
+  /** Show welcome card with tips and changelog in TUI (default: false) */
+  readonly showWelcomeCard?: boolean;
 }
 
 export interface LeanAgentSettings {
@@ -145,6 +147,7 @@ export const DEFAULT_LEAN_AGENT_SETTINGS: Readonly<LeanAgentSettings> = {
     usdToCnyRate: 7.25,
     diffContextLines: 2,
     language: 'zh',
+    showWelcomeCard: false,
   },
 };
 

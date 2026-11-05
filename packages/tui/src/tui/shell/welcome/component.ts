@@ -17,7 +17,17 @@ import {
   MINIMAX_CODE_WELCOME_PASTE_IMAGE_SHORTCUT,
 } from './design.js';
 import { getRuntimeLocaleLanguage } from '@mavis/shared/runtime-i18n';
+import { getLeanAgentSettings } from '@mavis/config';
 import { renderTuiWelcomeHero } from './hero.js';
+
+function shouldShowWelcomeCard(): boolean {
+  if (process.env.MINIMAX_SHOW_WELCOME_CARD === 'true') return true;
+  if (process.env.MINIMAX_SHOW_WELCOME_CARD === 'false') return false;
+  if (process.env.NODE_ENV === 'test' && !process.env.MINIMAX_LEAN_TUI) {
+    return true;
+  }
+  return getLeanAgentSettings().tui.showWelcomeCard ?? false;
+}
 
 export interface TuiWelcomeContent {
   readonly tips?: readonly string[];
@@ -66,6 +76,14 @@ export class TuiWelcome implements Component {
     const safeWidth = normalizeWidth(width);
     if (safeWidth === 0) return [];
     if (safeWidth < 4) return [fitLine('M', safeWidth)];
+
+    if (!shouldShowWelcomeCard()) {
+      const hero = renderTuiWelcomeHero(safeWidth);
+      const notice = resolveWelcomeAccountNotice(this.state);
+      const noticeRows = notice && !staticBanner ? renderWelcomeAccountNoticeRows(this.state, safeWidth) : [];
+      const lines = ['', ...hero, '', ...noticeRows];
+      return fitWelcomeHeight(lines, height);
+    }
 
     const policy = resolveTuiLayoutPolicy(safeWidth);
     const options = { keybindings: this.keybindings, content: this.content, staticBanner };

@@ -29,6 +29,7 @@ import {
   resetGlobalRuntimeLanguage,
 } from '@mavis/shared/runtime-i18n';
 import { getWelcomeDesign } from '../packages/tui/src/tui/shell/welcome/design.js';
+import { TuiWelcome } from '../packages/tui/src/tui/shell/welcome/component.js';
 import {
   formatTuiPermissionMode,
   formatTuiPermissionModeCompact,
@@ -491,4 +492,39 @@ test('command catalog: registers /language command with aliases lang and locale'
   expect(langCommand?.aliases).toContain('lang');
   expect(langCommand?.aliases).toContain('locale');
   expect(langCommand?.argumentHint).toBe('[en|zh]');
+});
+
+test('lean welcome: logo is shifted to the left and boxed tips/news card is removed', () => {
+  // 1. Verify waveform header logo is left-aligned with 2 spaces indent, not center-padded
+  const lines = renderWaveformHeader(120);
+  expect(lines.length).toBeGreaterThan(0);
+  // Each line starts with 2 spaces (left margin)
+  for (const line of lines) {
+    expect(line.startsWith('  ')).toBe(true);
+  }
+
+  // 2. Verify welcome view when card is removed
+  process.env.MINIMAX_SHOW_WELCOME_CARD = 'false';
+  try {
+    const welcome = new TuiWelcome({
+      version: '0.7.2',
+      workspace: '/workspace',
+      homeDir: '/home/user',
+      runtimeStatus: 'ready',
+    });
+    const rendered = welcome.render(100).join('\n');
+
+    // Should contain the logo art blocks
+    expect(rendered).toContain('█');
+
+    // Must NOT contain the boxed card or tips or news
+    expect(rendered).not.toContain('╭─');
+    expect(rendered).not.toContain('╰─');
+    expect(rendered).not.toContain('新手快速上手指南');
+    expect(rendered).not.toContain('Tips for getting started');
+    expect(rendered).not.toContain('最新功能');
+    expect(rendered).not.toContain("What's new");
+  } finally {
+    delete process.env.MINIMAX_SHOW_WELCOME_CARD;
+  }
 });
