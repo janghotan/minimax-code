@@ -25,7 +25,7 @@ export function runMcodeTelemetryCommand(
   const config = (dependencies.readConfig ?? getConfig)();
   const channel = (configEnabled: boolean | undefined) =>
     getLeanAgentSettings().declutter.disableTelemetry
-      ? { enabled: false, configured: false, blockedBy: 'hard-disabled' }
+      ? { enabled: false, configured: configEnabled === true, blockedBy: 'hard-disabled' }
       : resolveMcodeBusinessTelemetryPolicy({ configEnabled, environment });
   const policy = channel(config.telemetry.enabled);
   const status = {
